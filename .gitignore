@@ -1,0 +1,63 @@
+# ── Node / Next.js ─────────────────────────────────────────────────
+node_modules/
+.next/
+.vercel/
+out/
+dist/
+*.tsbuildinfo
+
+# ── Python / MCP Server ─────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+*.log
+
+# ── Environment / Secrets ───────────────────────────────────────────
+.env
+.env.local
+.env.production.local
+.env.development.local
+.env.test.local
+*.secret
+
+# ── OS / Editor ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/settings.json
+*.swp
+
+# ── Excluded Files ──────────────────────────────────────────────────
+# Resume files (unrelated to project)
+Arshdeep_Kaur_Resume.docx
+Arshdeep_Kaur_Resume.pdf
+resume_download.html
+generate_resume.js
+generate_pdf.js
+post.html
+agent-architecture.html
+dev.sh
+
+# Public dir PDFs / resumes
+amex-insight/public/*.pdf
+amex-insight/public/*.docx
+
+# Root-level scratch
+package-lock.json
+package.json
+
+# MCP server venv
+amex-insight-mcp/.venv/
+
+# ── Keep production data ─────────────────────────────────────────────
+# bm25.pkl and index.db ARE committed (real AMEX 10-K index, ~8.4 MB)
+# Do NOT add amex-insight-mcp/data/ to .gitignore

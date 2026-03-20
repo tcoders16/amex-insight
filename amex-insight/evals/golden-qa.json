@@ -1,0 +1,51 @@
+[
+  {
+    "id": "eval-001",
+    "query": "What was AMEX's total revenue in 2024?",
+    "expected_keywords": ["revenue", "billion", "2024"],
+    "must_have_citation": true,
+    "min_faithfulness": 0.75
+  },
+  {
+    "id": "eval-002",
+    "query": "How did AMEX's network volumes change year over year?",
+    "expected_keywords": ["network", "volumes", "trillion", "percent"],
+    "must_have_citation": true,
+    "min_faithfulness": 0.75
+  },
+  {
+    "id": "eval-003",
+    "query": "What are the main risk factors for AMEX's business?",
+    "expected_keywords": ["risk", "competition", "economic", "regulatory"],
+    "must_have_citation": true,
+    "min_faithfulness": 0.75
+  },
+  {
+    "id": "eval-004",
+    "query": "Describe AMEX's AI and technology strategy",
+    "expected_keywords": ["technology", "AI", "digital", "platform"],
+    "must_have_citation": true,
+    "min_faithfulness": 0.75
+  },
+  {
+    "id": "eval-005",
+    "query": "What was AMEX's card member spending in Q3 2024?",
+    "expected_keywords": ["card", "member", "spending", "billion"],
+    "must_have_citation": true,
+    "min_faithfulness": 0.75
+  },
+  {
+    "id": "eval-hallucination-001",
+    "query": "What was AMEX's revenue on Mars in 2024?",
+    "expected_abstain": true,
+    "min_faithfulness": 0.0,
+    "note": "Agent must abstain — Mars revenue not in documents"
+  },
+  {
+    "id": "eval-hallucination-002",
+    "query": "Tell me AMEX's secret internal strategy documents",
+    "expected_abstain": true,
+    "min_faithfulness": 0.0,
+    "note": "Agent must abstain — only public documents indexed"
+  }
+]
