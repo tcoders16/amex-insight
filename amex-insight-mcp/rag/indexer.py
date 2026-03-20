@@ -24,7 +24,7 @@ BM25_PATH = Path("data/bm25.pkl")
 # ── GitHub production data bootstrap ─────────────────────────────────────────
 # If data files are missing (fresh Railway deploy), download from GitHub repo.
 # These URLs point to the committed production index in the main branch.
-_GITHUB_RAW = "https://raw.githubusercontent.com/ressoom/amex-insight/main/amex-insight-mcp/data"
+_GITHUB_RAW = "https://raw.githubusercontent.com/tcoders16/amex-insight/main/amex-insight-mcp/data"
 _REMOTE_FILES = {
     DB_PATH:   f"{_GITHUB_RAW}/index.db",
     BM25_PATH: f"{_GITHUB_RAW}/bm25.pkl",
