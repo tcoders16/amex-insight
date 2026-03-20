@@ -51,9 +51,9 @@ dev.sh
 amex-insight/public/*.pdf
 amex-insight/public/*.docx
 
-# Root-level scratch
-package-lock.json
-package.json
+# Root-level scratch only (/ prefix = root only, not subdirs)
+/package-lock.json
+/package.json
 
 # MCP server venv
 amex-insight-mcp/.venv/
