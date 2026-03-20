@@ -570,42 +570,6 @@ export default function ChatInterface() {
       {/* ── Center: Chat ────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0 border-r border-border">
 
-        {/* ── Synthetic Data Notice — pinned for recruiter/tech team ── */}
-        <div className="flex-shrink-0 mx-4 mt-3 mb-1 rounded-xl border border-amber-300 bg-amber-50 shadow-sm overflow-hidden">
-          <div className="flex items-start gap-3 px-4 py-3">
-            <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-amber-100 border border-amber-300
-                            flex items-center justify-center text-[14px] mt-0.5">
-              ⚗️
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[11.5px] font-mono font-bold text-amber-800 uppercase tracking-wide">
-                  Demo · Synthetic Data
-                </span>
-                <span className="text-[9px] font-mono font-bold text-amber-600 bg-amber-200
-                                 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-                  For Assessment
-                </span>
-              </div>
-              <p className="text-[11px] font-mono text-amber-700 leading-relaxed">
-                Every answer is grounded to a real page-indexed source file — click any{" "}
-                <span className="font-bold text-blue-600">↗ source link</span>{" "}
-                in the Context panel to verify the exact retrieval.
-              </p>
-            </div>
-            <a
-              href="https://github.com/tcoders16/amex-insight/tree/main/amex-insight-mcp/data/docs/amex"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-shrink-0 text-[10.5px] font-mono font-semibold text-amber-700
-                         border border-amber-300 rounded-lg px-2.5 py-1.5 mt-0.5
-                         hover:bg-amber-100 hover:border-amber-400 transition-colors whitespace-nowrap"
-            >
-              View data ↗
-            </a>
-          </div>
-        </div>
-
         {!isEmpty && <SessionStatsBar stats={stats} />}
 
         <div className="flex-1 overflow-y-auto">
@@ -661,6 +625,27 @@ export default function ChatInterface() {
             </div>
           )
         })()}
+
+        {/* ── Synthetic Data Notice ── */}
+        <div className="flex items-center gap-3 px-4 py-2 mx-4 mb-1 mt-2 rounded-xl border border-amber-200 bg-amber-50">
+          <span className="text-[13px]">⚗️</span>
+          <p className="text-[10.5px] font-mono text-amber-700 flex-1">
+            <span className="font-bold">Demo · Synthetic Data</span>
+            {" — "}grounded to page-indexed source files. Click{" "}
+            <span className="font-bold text-blue-600">↗ source links</span>{" "}
+            in Context to verify.
+          </p>
+          <a
+            href="https://github.com/tcoders16/amex-insight/tree/main/amex-insight-mcp/data/docs/amex"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-shrink-0 text-[10px] font-mono font-semibold text-amber-700
+                       border border-amber-300 rounded-lg px-2 py-1
+                       hover:bg-amber-100 transition-colors whitespace-nowrap"
+          >
+            View data ↗
+          </a>
+        </div>
 
         {/* Input bar */}
         <div className="border-t border-border bg-white/80 backdrop-blur-sm p-5">
