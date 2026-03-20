@@ -22,6 +22,6 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: amex-insight-mcp
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          app-name: mcp-v2
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_V2 }}
           package: ./amex-insight-mcp

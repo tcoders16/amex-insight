@@ -13,7 +13,7 @@ jobs:
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             --max-time 10 \
-            "https://amex-insight-mcp-fpatcrgcfwd6grhe.eastus2-01.azurewebsites.net/health")
+            "https://mcp-v2-h4axdpfmgqa2htbk.canadacentral-01.azurewebsites.net/health")
           echo "Health check status: $STATUS"
           if [ "$STATUS" != "200" ]; then
             echo "⚠️  MCP server returned $STATUS — may be starting up"
