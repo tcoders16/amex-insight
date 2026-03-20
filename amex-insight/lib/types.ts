@@ -49,6 +49,11 @@ export type ToolName =
   | "compare_benchmarks"
   | "validate_faithfulness"
   | "extract_kpis"
+  | "save_chat"
+  | "list_saved_chats"
+  | "get_saved_chat"
+  | "delete_saved_chat"
+  | "send_email_summary"
 
 export interface McpToolCall {
   id:        string
