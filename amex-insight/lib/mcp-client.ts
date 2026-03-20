@@ -27,7 +27,7 @@ async function callTool<T>(
       method:  "POST",
       headers,
       body,
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(25_000),
     })
 
     if (!res.ok) {
