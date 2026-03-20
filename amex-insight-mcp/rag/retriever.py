@@ -78,43 +78,58 @@ async def hybrid_search(
             retrieval_ms=int((time.perf_counter() - t0) * 1000)
         )
 
-    # ── Cross-encoder rerank ──────────────────────────────────────────────────
-    reranker = get_reranker()
-    pairs    = [
-        (query, f"{c['context']}\n{c['text']}")
-        for c in candidates
-    ]
-    scores = reranker.predict(pairs)
-
-    ranked = sorted(
-        zip(candidates, scores),
-        key=lambda x: x[1],
-        reverse=True
-    )[:top_k]
-
-    chunks = [
-        Chunk(
-            id       = c["id"],
-            doc_id   = c["doc_id"],
-            page_num = c["page_num"],
-            section  = c["section"],
-            text     = c["text"],
-            context  = c["context"],
-            score    = float(min(max(score, 0.0), 1.0)),
-        )
-        for c, score in ranked
-    ]
+    # ── Cross-encoder rerank (with BM25 fallback on failure) ─────────────────
+    reranked = False
+    try:
+        reranker = get_reranker()
+        pairs    = [
+            (query, f"{c['context']}\n{c['text']}")
+            for c in candidates
+        ]
+        scores = reranker.predict(pairs)
+        ranked = sorted(
+            zip(candidates, scores),
+            key=lambda x: x[1],
+            reverse=True
+        )[:top_k]
+        chunks = [
+            Chunk(
+                id       = c["id"],
+                doc_id   = c["doc_id"],
+                page_num = c["page_num"],
+                section  = c["section"],
+                text     = c["text"],
+                context  = c["context"],
+                score    = float(min(max(score, 0.0), 1.0)),
+            )
+            for c, score in ranked
+        ]
+        reranked = True
+    except Exception as e:
+        logger.warning(f"[retriever] cross-encoder failed, using BM25 order: {e}")
+        chunks = [
+            Chunk(
+                id       = c["id"],
+                doc_id   = c["doc_id"],
+                page_num = c["page_num"],
+                section  = c["section"],
+                text     = c["text"],
+                context  = c["context"],
+                score    = 0.5,
+            )
+            for c in candidates[:top_k]
+        ]
 
     retrieval_ms = int((time.perf_counter() - t0) * 1000)
     logger.info(
         f"[retriever] query={query[:50]!r} "
-        f"candidates={len(candidates)} reranked={len(chunks)} ms={retrieval_ms}"
+        f"candidates={len(candidates)} reranked={reranked} ms={retrieval_ms}"
     )
 
     return SearchResponse(
         chunks=chunks,
         query=query,
         total_candidates=len(candidates),
-        reranked=True,
+        reranked=reranked,
         retrieval_ms=retrieval_ms,
     )
