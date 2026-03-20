@@ -1,0 +1,28 @@
+name: Deploy MCP Server to Azure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "amex-insight-mcp/**"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: amex-insight-mcp
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./amex-insight-mcp
+          startup-command: "uvicorn main:app --host 0.0.0.0 --port 8000"
