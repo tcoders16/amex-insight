@@ -124,6 +124,51 @@ export async function extractKpis(docId: string): Promise<McpToolResult> {
   return callTool<KPIReport>("extract_kpis", { doc_id: docId })
 }
 
+// ─── Saved Chats tools ────────────────────────────────────────────────────────
+
+export async function saveChat(
+  title: string,
+  messages: { role: string; content: string }[],
+  summary = "",
+  tags: string[] = []
+): Promise<McpToolResult> {
+  return callTool("save_chat", { title, messages, summary, tags })
+}
+
+export async function listSavedChats(
+  limit = 50,
+  tagFilter?: string
+): Promise<McpToolResult> {
+  return callTool("list_saved_chats", {
+    limit,
+    ...(tagFilter ? { tag_filter: tagFilter } : {}),
+  })
+}
+
+export async function getSavedChat(chatId: string): Promise<McpToolResult> {
+  return callTool("get_saved_chat", { chat_id: chatId })
+}
+
+export async function deleteSavedChat(chatId: string): Promise<McpToolResult> {
+  return callTool("delete_saved_chat", { chat_id: chatId })
+}
+
+export async function sendEmailSummary(
+  query: string,
+  summary: string,
+  confidenceScore: number,
+  citations: { doc: string; page: number; score: number }[] = [],
+  to = "tosolankiom@gmail.com"
+): Promise<McpToolResult> {
+  return callTool("send_email_summary", {
+    to,
+    query,
+    summary,
+    confidence_score: confidenceScore,
+    citations: citations.map(c => ({ doc: c.doc, page: c.page, score: c.score })),
+  })
+}
+
 // ─── List available tools from MCP server ────────────────────────────────────
 
 export async function listMcpTools(): Promise<

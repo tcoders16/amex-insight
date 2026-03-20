@@ -1,14 +1,18 @@
 """
 AmexInsight MCP Server
 ─────────────────────
-FastAPI + FastMCP · Python · Railway
+FastAPI + FastMCP · Python · Azure App Service
 
-5 tools exposed via MCP protocol:
+9 tools exposed via MCP protocol:
   • search_financial_docs   — hybrid BM25 + FTS5 + cross-encoder
   • get_document_page       — page-level grounding
   • compare_benchmarks      — spend benchmark comparison
   • validate_faithfulness   — NLI faithfulness check (layer 4)
   • extract_kpis            — structured KPI extraction
+  • save_chat               — persist important conversation to SQLite
+  • list_saved_chats        — list all saved chats with metadata
+  • get_saved_chat          — retrieve full message history by ID
+  • delete_saved_chat       — remove a saved chat
 
 Security: HMAC-SHA256 · replay protection · rate limiting · PII scrubbing
 Observability: Langfuse traces · DLQ via Upstash Redis
@@ -29,15 +33,19 @@ from pydantic_settings import BaseSettings
 
 from schemas.models import (
     SearchRequest, PageRequest, BenchmarkRequest,
-    FaithfulnessRequest, KpiRequest, IndexRequest, HealthResponse
+    FaithfulnessRequest, KpiRequest, IndexRequest, HealthResponse,
+    SaveChatRequest, ListSavedChatsRequest, GetSavedChatRequest, DeleteSavedChatRequest,
+    EmailRequest,
 )
-from tools.search      import search_financial_docs
-from tools.page        import get_document_page
-from tools.benchmarks  import compare_benchmarks
-from tools.faithfulness import validate_faithfulness
-from tools.extract     import extract_kpis
-from tools.index_page  import index_document_page
-from tools.list_index  import list_index
+from tools.search        import search_financial_docs
+from tools.page          import get_document_page
+from tools.benchmarks    import compare_benchmarks
+from tools.faithfulness  import validate_faithfulness
+from tools.extract       import extract_kpis
+from tools.index_page    import index_document_page
+from tools.list_index    import list_index
+from tools.saved_chats   import save_chat, list_saved_chats, get_saved_chat, delete_saved_chat
+from tools.email         import send_email_summary
 from security.auth     import verify_hmac, scrub
 from dlq.dlq           import enqueue, depth, rate_check
 from rag.indexer       import get_index
@@ -52,6 +60,7 @@ class Settings(BaseSettings):
     langfuse_public_key:  str = ""
     langfuse_host:        str = "https://cloud.langfuse.com"
     allowed_origins:      str = "https://amex-insight.vercel.app,http://localhost:3000"
+    resend_api_key:       str = ""
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 
@@ -104,13 +113,20 @@ app.add_middleware(
 # ─── MCP Tool dispatcher ─────────────────────────────────────────────────────
 
 TOOL_REGISTRY = {
-    "search_financial_docs":  (SearchRequest,      search_financial_docs),
-    "get_document_page":      (PageRequest,         get_document_page),
-    "compare_benchmarks":     (BenchmarkRequest,    compare_benchmarks),
-    "validate_faithfulness":  (FaithfulnessRequest, validate_faithfulness),
-    "extract_kpis":           (KpiRequest,          extract_kpis),
-    "index_document_page":    (IndexRequest,        index_document_page),
-    "list_index":             (None,                list_index),
+    "search_financial_docs":  (SearchRequest,           search_financial_docs),
+    "get_document_page":      (PageRequest,              get_document_page),
+    "compare_benchmarks":     (BenchmarkRequest,         compare_benchmarks),
+    "validate_faithfulness":  (FaithfulnessRequest,      validate_faithfulness),
+    "extract_kpis":           (KpiRequest,               extract_kpis),
+    "index_document_page":    (IndexRequest,             index_document_page),
+    "list_index":             (None,                     list_index),
+    # ── Saved Chats ──────────────────────────────────────────────────────────
+    "save_chat":              (SaveChatRequest,          save_chat),
+    "list_saved_chats":       (ListSavedChatsRequest,    list_saved_chats),
+    "get_saved_chat":         (GetSavedChatRequest,      get_saved_chat),
+    "delete_saved_chat":      (DeleteSavedChatRequest,   delete_saved_chat),
+    # ── Email ─────────────────────────────────────────────────────────────────
+    "send_email_summary":     (EmailRequest,             send_email_summary),
 }
 
 MAX_RETRIES = 3

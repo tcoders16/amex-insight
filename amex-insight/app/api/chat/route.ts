@@ -6,6 +6,7 @@ import {
   compareBenchmarks,
   validateFaithfulness,
   extractKpis,
+  sendEmailSummary,
 } from "@/lib/mcp-client"
 import type { AgentStep, Citation, SessionMemory } from "@/lib/types"
 
@@ -134,6 +135,22 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
           doc_id: { type: "string", description: "Document to extract KPIs from" },
         },
         required: ["doc_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name:        "send_email_summary",
+      description: "Email a financial insight summary to tosolankiom@gmail.com. Call this when the user asks to email, send, or share the summary. Always call AFTER you have a final grounded answer.",
+      parameters: {
+        type: "object",
+        properties: {
+          query:            { type: "string", description: "The original user question" },
+          summary:          { type: "string", description: "The full grounded answer to email" },
+          confidence_score: { type: "number", description: "Faithfulness score 0-1" },
+        },
+        required: ["query", "summary"],
       },
     },
   },
@@ -296,6 +313,21 @@ export async function POST(req: Request) {
                 }
                 case "extract_kpis":
                   mcpResult = await extractKpis(args.doc_id)
+                  break
+                case "send_email_summary":
+                  mcpResult = await sendEmailSummary(
+                    args.query,
+                    args.summary,
+                    args.confidence_score ?? finalConfidence ?? 1.0,
+                    allCitations.slice(0, 5),
+                  )
+                  addStep({
+                    id:     `email-${Date.now()}`,
+                    type:   "tool_call",
+                    label:  `Email sent → tosolankiom@gmail.com`,
+                    status: mcpResult?.result?.success ? "done" : "error",
+                    durationMs: mcpResult?.durationMs,
+                  })
                   break
                 default:
                   mcpResult = { result: null, error: "Unknown tool", durationMs: 0, retries: 0 }

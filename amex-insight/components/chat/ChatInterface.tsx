@@ -232,14 +232,41 @@ export default function ChatInterface() {
   const [stats, setStats]         = useState<SessionStats>({
     toolCalls: 0, retried: 0, dlq: 0, recovered: 0, avgLatencyMs: 0,
   })
+  const [panelWidth, setPanelWidth] = useState(480)
 
   const bottomRef    = useRef<HTMLDivElement>(null)
   const inputRef     = useRef<HTMLTextAreaElement>(null)
   const latenciesRef = useRef<number[]>([])
+  const isDraggingRef  = useRef(false)
+  const dragStartRef   = useRef({ x: 0, width: 0 })
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
+
+  // Panel resize drag handlers
+  const onDragStart = useCallback((e: React.MouseEvent) => {
+    isDraggingRef.current = true
+    dragStartRef.current  = { x: e.clientX, width: panelWidth }
+    document.body.style.cursor    = "ew-resize"
+    document.body.style.userSelect = "none"
+
+    const onMove = (ev: MouseEvent) => {
+      if (!isDraggingRef.current) return
+      const delta = dragStartRef.current.x - ev.clientX
+      const next  = Math.min(800, Math.max(320, dragStartRef.current.width + delta))
+      setPanelWidth(next)
+    }
+    const onUp = () => {
+      isDraggingRef.current = false
+      document.body.style.cursor    = ""
+      document.body.style.userSelect = ""
+      window.removeEventListener("mousemove", onMove)
+      window.removeEventListener("mouseup",   onUp)
+    }
+    window.addEventListener("mousemove", onMove)
+    window.addEventListener("mouseup",   onUp)
+  }, [panelWidth])
 
   // Keep refs to current messages/memories so event handlers can read latest values
   const messagesRef  = useRef<ChatMessage[]>([])
@@ -341,6 +368,7 @@ export default function ChatInterface() {
     }
 
     setMessages(prev => [...prev, userMsg, assistantMsg])
+    setMemories([])
     setInput("")
     setLoading(true)
 
@@ -542,6 +570,42 @@ export default function ChatInterface() {
       {/* ── Center: Chat ────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0 border-r border-border">
 
+        {/* ── Synthetic Data Notice — pinned for recruiter/tech team ── */}
+        <div className="flex-shrink-0 mx-4 mt-3 mb-1 rounded-xl border border-amber-300 bg-amber-50 shadow-sm overflow-hidden">
+          <div className="flex items-start gap-3 px-4 py-3">
+            <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-amber-100 border border-amber-300
+                            flex items-center justify-center text-[14px] mt-0.5">
+              ⚗️
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-[11.5px] font-mono font-bold text-amber-800 uppercase tracking-wide">
+                  Demo · Synthetic Data
+                </span>
+                <span className="text-[9px] font-mono font-bold text-amber-600 bg-amber-200
+                                 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                  For Assessment
+                </span>
+              </div>
+              <p className="text-[11px] font-mono text-amber-700 leading-relaxed">
+                Every answer is grounded to a real page-indexed source file — click any{" "}
+                <span className="font-bold text-blue-600">↗ source link</span>{" "}
+                in the Context panel to verify the exact retrieval.
+              </p>
+            </div>
+            <a
+              href="https://github.com/tcoders16/amex-insight/tree/main/amex-insight-mcp/data/docs/amex"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-shrink-0 text-[10.5px] font-mono font-semibold text-amber-700
+                         border border-amber-300 rounded-lg px-2.5 py-1.5 mt-0.5
+                         hover:bg-amber-100 hover:border-amber-400 transition-colors whitespace-nowrap"
+            >
+              View data ↗
+            </a>
+          </div>
+        </div>
+
         {!isEmpty && <SessionStatsBar stats={stats} />}
 
         <div className="flex-1 overflow-y-auto">
@@ -558,6 +622,45 @@ export default function ChatInterface() {
             <div ref={bottomRef} />
           </div>
         </div>
+
+        {/* ── MCP Command Chips ── */}
+        {(() => {
+          const CHIPS = [
+            { cmd: "/email",   label: "Send Email Summary",  color: "text-blue-500 border-blue-200 bg-blue-50",       prompt: "Summarise the latest AMEX financial performance and email me the summary." },
+            { cmd: "/summary", label: "Quick Summary",       color: "text-violet-500 border-violet-200 bg-violet-50", prompt: "Give me a concise executive summary of AMEX 2024 annual performance." },
+            { cmd: "/doc-gen", label: "Generate Doc",        color: "text-emerald-500 border-emerald-200 bg-emerald-50", prompt: "Generate a structured financial briefing document from AMEX 2024 data with all key KPIs, risks, and strategic highlights." },
+            { cmd: "/kpis",    label: "Extract KPIs",        color: "text-amber-500 border-amber-200 bg-amber-50",     prompt: "Extract all key financial KPIs from the AMEX 2024 annual report as structured data." },
+            { cmd: "/compare", label: "Compare Years",       color: "text-pink-500 border-pink-200 bg-pink-50",        prompt: "Compare AMEX financial performance 2022 vs 2024 across revenue, EPS, and network volumes." },
+            { cmd: "/risks",   label: "Risk Assessment",     color: "text-red-500 border-red-200 bg-red-50",           prompt: "Identify and assess the top 3 risks to AMEX's growth trajectory with severity ratings." },
+          ]
+          const Chip = ({ cmd, label, color, prompt, suffix }: typeof CHIPS[0] & { suffix: string }) => (
+            <button
+              key={cmd + suffix}
+              onClick={() => !loading && sendMessage(prompt)}
+              disabled={loading}
+              className={clsx(
+                "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full border",
+                "text-[11.5px] font-mono font-semibold transition-all duration-200",
+                "hover:scale-105 hover:shadow-sm disabled:opacity-40 disabled:cursor-not-allowed",
+                color
+              )}
+            >
+              <span className="opacity-60">{cmd}</span>
+              <span className="opacity-40 mx-0.5">·</span>
+              <span>{label}</span>
+            </button>
+          )
+          return (
+            <div className="border-t border-border bg-white/60 backdrop-blur-sm pt-2.5 pb-0 overflow-hidden">
+              <div className="flex items-center gap-2.5 animate-marquee-slow whitespace-nowrap w-max">
+                {CHIPS.map(c => <Chip key={c.cmd + "a"} {...c} suffix="a" />)}
+                <span className="text-border mx-2">·</span>
+                {CHIPS.map(c => <Chip key={c.cmd + "b"} {...c} suffix="b" />)}
+                <span className="text-border mx-2">·</span>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Input bar */}
         <div className="border-t border-border bg-white/80 backdrop-blur-sm p-5">
@@ -603,7 +706,20 @@ export default function ChatInterface() {
       </div>
 
       {/* ── Right Panel — Claude light style ────────────────────────── */}
-      <div className="w-[360px] flex-shrink-0 flex flex-col bg-gray-50 border-l border-gray-200 overflow-hidden">
+      <div
+        className="flex-shrink-0 flex flex-col bg-gray-50 border-l border-gray-200 overflow-hidden relative"
+        style={{ width: panelWidth }}
+      >
+        {/* Drag handle */}
+        <div
+          onMouseDown={onDragStart}
+          className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize z-10
+                     hover:bg-blue-400 transition-colors duration-150 group"
+          title="Drag to resize"
+        >
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12
+                          bg-gray-300 group-hover:bg-blue-400 rounded-r transition-colors" />
+        </div>
 
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white flex-shrink-0">
@@ -647,7 +763,7 @@ export default function ChatInterface() {
           </div>
           <div className={clsx(
             "overflow-y-auto",
-            activeSteps.length === 0 ? "" : "max-h-[220px]"
+            activeSteps.length === 0 ? "" : "max-h-[420px]"
           )}>
             {activeSteps.length === 0 ? (
               <EmptyActivity />
@@ -700,27 +816,50 @@ export default function ChatInterface() {
               </div>
             ) : (
               <div className="flex flex-col gap-1.5">
-                {[...memories].reverse().map(m => (
-                  <div
-                    key={m.id}
-                    className={clsx(
-                      "px-3 py-2.5 rounded-lg border-l-2 animate-slide-up",
-                      m.verified
-                        ? "border-emerald-400 bg-emerald-50"
-                        : "border-amber-400 bg-amber-50"
-                    )}
-                  >
-                    <p className="text-[11.5px] text-gray-700 leading-snug">{m.fact}</p>
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <span className="text-[10px] font-mono text-gray-400">{m.source}</span>
-                      {m.verified && (
-                        <span className="text-[9px] font-mono font-bold text-emerald-500 uppercase tracking-wide">
-                          ✓ verified
-                        </span>
+                {[...memories].reverse().map(m => {
+                  // Parse "2024-10k · p.43" → GitHub link to exact folder
+                  const match = m.source.match(/^([\w-]+)\s*·\s*p\.(\d+)/)
+                  const docId  = match?.[1] ?? ""
+                  const pageNum = match?.[2] ? String(parseInt(match[2])).padStart(4, "0") : ""
+                  const ghBase = "https://github.com/tcoders16/amex-insight/tree/main/amex-insight-mcp/data/docs/amex"
+                  const ghUrl  = docId && pageNum
+                    ? `${ghBase}/${docId}?search=p${pageNum}`
+                    : docId ? `${ghBase}/${docId}` : null
+
+                  return (
+                    <div
+                      key={m.id}
+                      className={clsx(
+                        "px-3 py-2.5 rounded-lg border-l-2 animate-slide-up",
+                        m.verified
+                          ? "border-emerald-400 bg-emerald-50"
+                          : "border-amber-400 bg-amber-50"
                       )}
+                    >
+                      <p className="text-[11.5px] text-gray-700 leading-snug">{m.fact}</p>
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        {ghUrl ? (
+                          <a
+                            href={ghUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] font-mono text-blue-500 hover:text-blue-700 hover:underline transition-colors"
+                            title="View source file on GitHub"
+                          >
+                            {m.source} ↗
+                          </a>
+                        ) : (
+                          <span className="text-[10px] font-mono text-gray-400">{m.source}</span>
+                        )}
+                        {m.verified && (
+                          <span className="text-[9px] font-mono font-bold text-emerald-500 uppercase tracking-wide">
+                            ✓ verified
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

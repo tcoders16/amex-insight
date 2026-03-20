@@ -48,13 +48,15 @@ const config: Config = {
         "grid-subtle": "32px 32px",
       },
       animation: {
-        "pulse-slow": "pulse 3s cubic-bezier(0.4,0,0.6,1) infinite",
-        "fade-in":    "fadeIn 0.35s ease forwards",
-        "slide-up":   "slideUp 0.35s ease forwards",
+        "pulse-slow":    "pulse 3s cubic-bezier(0.4,0,0.6,1) infinite",
+        "fade-in":       "fadeIn 0.35s ease forwards",
+        "slide-up":      "slideUp 0.35s ease forwards",
+        "marquee-slow":  "marquee 28s linear infinite",
       },
       keyframes: {
         fadeIn:  { "0%": { opacity: "0" }, "100%": { opacity: "1" } },
         slideUp: { "0%": { opacity: "0", transform: "translateY(10px)" }, "100%": { opacity: "1", transform: "translateY(0)" } },
+        marquee: { "0%": { transform: "translateX(0)" }, "100%": { transform: "translateX(-50%)" } },
       },
       boxShadow: {
         "glass":     "0 1px 3px rgba(15,23,42,0.06), 0 4px 24px rgba(15,23,42,0.05)",

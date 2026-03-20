@@ -144,6 +144,87 @@ class IndexResponse(BaseModel):
     pipeline:         list[str]    # steps executed, for architecture demo
 
 
+# ─── save_chat ───────────────────────────────────────────────────────────────
+
+class SaveChatRequest(BaseModel):
+    title:    str        = Field(min_length=1, max_length=200)
+    messages: list[dict] = Field(min_length=1)
+    summary:  str        = Field(default="", max_length=500)
+    tags:     list[str]  = Field(default_factory=list, max_length=10)
+
+
+class SaveChatResponse(BaseModel):
+    chat_id:       str
+    title:         str
+    message_count: int
+    saved_at:      int
+
+
+# ─── list_saved_chats ─────────────────────────────────────────────────────────
+
+class ListSavedChatsRequest(BaseModel):
+    limit:      int           = Field(default=50, ge=1, le=200)
+    tag_filter: Optional[str] = None
+
+
+class SavedChatMeta(BaseModel):
+    chat_id:       str
+    title:         str
+    summary:       str = ""
+    tags:          list[str]
+    created_at:    int
+    message_count: int
+
+
+class ListSavedChatsResponse(BaseModel):
+    chats: list[SavedChatMeta]
+    total: int
+
+
+# ─── get_saved_chat ───────────────────────────────────────────────────────────
+
+class GetSavedChatRequest(BaseModel):
+    chat_id: str = Field(min_length=1, max_length=100)
+
+
+class GetSavedChatResponse(BaseModel):
+    chat_id:    str
+    title:      str
+    summary:    str        = ""
+    messages:   list[dict]
+    tags:       list[str]
+    created_at: int        = 0
+    found:      bool
+
+
+# ─── delete_saved_chat ────────────────────────────────────────────────────────
+
+class DeleteSavedChatRequest(BaseModel):
+    chat_id: str = Field(min_length=1, max_length=100)
+
+
+class DeleteSavedChatResponse(BaseModel):
+    chat_id: str
+    deleted: bool
+
+
+# ─── send_email_summary ──────────────────────────────────────────────────────
+
+class EmailRequest(BaseModel):
+    to:               str        = Field(default="tosolankiom@gmail.com", min_length=5, max_length=200)
+    subject:          str        = Field(default="", max_length=200)
+    query:            str        = Field(min_length=1, max_length=500)
+    summary:          str        = Field(min_length=1, max_length=5000)
+    confidence_score: float      = Field(default=1.0, ge=0.0, le=1.0)
+    citations:        list[dict] = Field(default_factory=list)
+
+
+class EmailResponse(BaseModel):
+    success:    bool
+    message_id: str
+    error:      str = ""
+
+
 # ─── Health ──────────────────────────────────────────────────────────────────
 
 class HealthResponse(BaseModel):
