@@ -20,9 +20,12 @@ _reranker: Optional[CrossEncoder] = None
 def get_reranker() -> CrossEncoder:
     global _reranker
     if _reranker is None:
-        logger.info("[reranker] Loading MS-MARCO cross-encoder...")
+        import time
+        logger.info("[reranker] Downloading/loading cross-encoder/ms-marco-MiniLM-L-6-v2 (~70MB)...")
+        t0 = time.perf_counter()
         _reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
-        logger.info("[reranker] Loaded")
+        elapsed = time.perf_counter() - t0
+        logger.info(f"[reranker] Model loaded successfully in {elapsed:.1f}s — ready for inference")
     return _reranker
 
 
