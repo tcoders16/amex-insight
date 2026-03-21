@@ -4,6 +4,8 @@ import { CitationCard } from "@/components/rag/CitationCard"
 import { ThinkingIndicator } from "./ThinkingIndicator"
 import { clsx } from "clsx"
 import type { ChatMessage } from "@/lib/types"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 interface MessageBubbleProps {
   message: ChatMessage
@@ -39,10 +41,17 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             <ThinkingIndicator />
           ) : (
             <div className={clsx(
-              "text-[14px] text-ink-secondary leading-[1.75] font-normal",
+              "text-[14px] text-ink-secondary leading-[1.75] font-normal prose prose-sm max-w-none",
+              "prose-headings:font-semibold prose-headings:text-ink-primary",
+              "prose-strong:font-semibold prose-strong:text-ink-primary",
+              "prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1",
+              "prose-p:my-1.5 prose-p:leading-[1.75]",
+              "prose-code:text-[12px] prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded",
               message.streaming && "stream-text"
             )}>
-              {message.content}
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {message.content}
+              </ReactMarkdown>
               {message.streaming && (
                 <span className="inline-block w-0.5 h-[1.1em] bg-accent-blue ml-0.5 cursor-blink align-text-bottom" />
               )}
