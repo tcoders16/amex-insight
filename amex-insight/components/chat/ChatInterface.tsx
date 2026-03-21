@@ -85,13 +85,22 @@ function LiveStep({ step, index }: { step: AgentStep; index: number }) {
   // ── Error row ───────────────────────────────────────────────────────────────
   if (isError) {
     return (
-      <div className="animate-slide-up flex items-center gap-2 px-3 py-1.5">
-        <div className="flex-shrink-0 w-4 flex flex-col items-center gap-0.5">
-          <div className="w-px h-2 bg-gray-200" />
-          <AlertCircle className="w-3 h-3 text-red-500" />
-          <div className="w-px h-2 bg-gray-200" />
+      <div className="animate-slide-up px-3 py-1.5">
+        <div className="flex items-center gap-2">
+          <div className="flex-shrink-0 w-4 flex flex-col items-center gap-0.5">
+            <div className="w-px h-2 bg-gray-200" />
+            <AlertCircle className="w-3 h-3 text-red-500" />
+            <div className="w-px h-2 bg-gray-200" />
+          </div>
+          <span className="text-[11.5px] font-mono text-red-500 truncate">{step.label}</span>
         </div>
-        <span className="text-[11.5px] font-mono text-red-500 truncate">{step.label}</span>
+        {step.detail && (
+          <div className="ml-6 mt-1 mb-1 p-2 rounded-lg bg-red-50 border border-red-200">
+            <pre className="text-[10.5px] font-mono text-red-600 whitespace-pre-wrap break-words leading-relaxed">
+              {step.detail.length > 400 ? step.detail.slice(0, 400) + "…" : step.detail}
+            </pre>
+          </div>
+        )}
       </div>
     )
   }
