@@ -7,7 +7,7 @@ const SECRET = process.env.MCP_SHARED_SECRET ?? "dev-secret-change-in-prod"
  * Prevents replay attacks (30s window enforced server-side).
  */
 export function signRequest(body: string): Record<string, string> {
-  const timestamp = Date.now().toString()
+  const timestamp = Math.floor(Date.now() / 1000).toString()
   const signature = crypto
     .createHmac("sha256", SECRET)
     .update(`${timestamp}.${body}`)
