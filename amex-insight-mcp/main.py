@@ -28,7 +28,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic_settings import BaseSettings
 
 from schemas.models import (
@@ -46,6 +47,7 @@ from tools.index_page    import index_document_page
 from tools.list_index    import list_index
 from tools.saved_chats   import save_chat, list_saved_chats, get_saved_chat, delete_saved_chat
 from tools.email         import send_email_summary
+from tools.generate_doc  import generate_document, GenerateDocRequest, OUTPUT_DIR
 from security.auth     import verify_hmac, scrub
 from dlq.dlq           import enqueue, depth, rate_check
 from rag.indexer       import get_index
@@ -127,12 +129,27 @@ TOOL_REGISTRY = {
     "delete_saved_chat":      (DeleteSavedChatRequest,   delete_saved_chat),
     # ── Email ─────────────────────────────────────────────────────────────────
     "send_email_summary":     (EmailRequest,             send_email_summary),
+    # ── Document Generation ───────────────────────────────────────────────────
+    "generate_document":      (GenerateDocRequest,       generate_document),
 }
 
 MAX_RETRIES = 3
 RETRY_BASE  = 0.1   # seconds
 
 # ─── Routes ──────────────────────────────────────────────────────────────────
+
+@app.get("/files/{filename}")
+async def serve_file(filename: str):
+    """Serve generated .docx / .pptx files."""
+    import os as _os
+    path = _os.path.join(OUTPUT_DIR, filename)
+    if not _os.path.exists(path) or not _os.path.isfile(path):
+        raise HTTPException(status_code=404, detail="File not found")
+    media = "application/vnd.openxmlformats-officedocument.wordprocessingml.document" \
+            if filename.endswith(".docx") else \
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    return FileResponse(path, media_type=media, filename=filename)
+
 
 @app.get("/health", response_model=HealthResponse)
 async def health():
