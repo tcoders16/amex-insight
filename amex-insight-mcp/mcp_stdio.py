@@ -223,6 +223,65 @@ async def list_index() -> dict:
     return result.model_dump()
 
 
+# ── Tool 8: generate_document ─────────────────────────────────────────────────
+
+@mcp.tool()
+async def generate_document(
+    doc_type: str,
+    title:    str,
+    sections: list[dict],
+    subtitle: str = "",
+) -> dict:
+    """
+    Generate a professional Word (.docx) or PowerPoint (.pptx) document
+    from financial analysis content. Returns a download URL.
+
+    doc_type: "word" → .docx analyst report
+              "ppt"  → .pptx board deck
+
+    sections: list of { "heading": str, "body": str }
+
+    Example use: After extracting KPIs and comparing benchmarks,
+    call this to produce a board-ready deck in one step.
+    """
+    from tools.generate_doc import generate_document as _fn, GenerateDocRequest, Section
+    req = GenerateDocRequest(
+        doc_type  = doc_type,
+        title     = title,
+        subtitle  = subtitle,
+        sections  = [Section(**s) for s in sections],
+    )
+    result = await _fn(req)
+    return result.model_dump()
+
+
+# ── Tool 9: send_email_summary ────────────────────────────────────────────────
+
+@mcp.tool()
+async def send_email_summary(
+    query:            str,
+    summary:          str,
+    to:               str   = "tosolankiom@gmail.com",
+    confidence_score: float = 1.0,
+) -> dict:
+    """
+    Email a financial analysis summary via Resend API.
+    Sends a styled HTML email with confidence score and citations.
+
+    Args:
+        query:            The original financial question
+        summary:          The AI-generated answer to send
+        to:               Recipient email (default: tosolankiom@gmail.com)
+        confidence_score: Faithfulness score 0–1 shown in email badge
+    """
+    from tools.email import send_email_summary as _fn
+    from schemas.models import EmailRequest
+    result = await _fn(EmailRequest(
+        to=to, query=query, summary=summary, confidence_score=confidence_score,
+    ))
+    return result.model_dump()
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":

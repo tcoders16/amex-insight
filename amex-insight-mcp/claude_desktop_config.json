@@ -1,0 +1,23 @@
+{
+  "_comment": "AmexInsight MCP — Claude Desktop configuration",
+  "_instructions": [
+    "1. Copy this file content into:",
+    "   macOS: ~/Library/Application Support/Claude/claude_desktop_config.json",
+    "   Windows: %APPDATA%\\Claude\\claude_desktop_config.json",
+    "2. Update the path below to the absolute path of mcp_stdio.py on your machine",
+    "3. Make sure dependencies are installed: pip install -r requirements.txt",
+    "4. Restart Claude Desktop"
+  ],
+  "mcpServers": {
+    "amex-insight": {
+      "command": "python",
+      "args": [
+        "/Users/omkumarsolanki/WorkSpace/AMEX/funproject/amex-insight-mcp/mcp_stdio.py"
+      ],
+      "env": {
+        "MCP_SHARED_SECRET": "29726a71863bde75589ac18339d54910ae0841d96b22ef5c97af89e5949e9080",
+        "PYTHONPATH": "/Users/omkumarsolanki/WorkSpace/AMEX/funproject/amex-insight-mcp"
+      }
+    }
+  }
+}
