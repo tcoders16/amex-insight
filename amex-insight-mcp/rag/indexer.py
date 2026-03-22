@@ -18,8 +18,9 @@ from schemas.models import Chunk
 
 logger = logging.getLogger(__name__)
 
-DB_PATH   = Path("data/index.db")
-BM25_PATH = Path("data/bm25.pkl")
+_ROOT     = Path(__file__).parent.parent
+DB_PATH   = _ROOT / "data" / "index.db"
+BM25_PATH = _ROOT / "data" / "bm25.pkl"
 
 # ── GitHub production data bootstrap ─────────────────────────────────────────
 # If data files are missing (fresh Railway deploy), download from GitHub repo.
