@@ -389,13 +389,19 @@ export async function POST(req: Request) {
                       }
                     }
                   }
-                  addStep({
-                    id:     `doc-${Date.now()}`,
-                    type:   "tool_call",
-                    label:  `${args.doc_type === "ppt" ? "PowerPoint" : "Word doc"} generated → ${(mcpResult?.result as any)?.filename ?? ""}`,
-                    status: mcpResult?.result ? "done" : "error",
-                    durationMs: mcpResult?.durationMs,
-                  })
+                  {
+                    const r2 = mcpResult?.result as any
+                    const docSuccess = r2?.success === true
+                    addStep({
+                      id:     `doc-${Date.now()}`,
+                      type:   "tool_call",
+                      label:  docSuccess
+                        ? `${args.doc_type === "ppt" ? "PowerPoint" : "Word doc"} generated → ${r2?.filename ?? ""}`
+                        : `Document generation failed: ${r2?.error ?? mcpResult?.error ?? "unknown error"}`,
+                      status: docSuccess ? "done" : "error",
+                      durationMs: mcpResult?.durationMs,
+                    })
+                  }
                   break
                 case "send_email_summary": {
                   const toAddr    = (args.to as string | undefined)        || "emailtosolankiom@gmail.com"

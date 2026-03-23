@@ -15,9 +15,7 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
-# Use /home/generated on Azure (persistent storage), /tmp/generated locally
-_default_dir = "/home/generated" if os.path.exists("/home") and os.getenv("WEBSITE_SITE_NAME") else "/tmp/generated"
-OUTPUT_DIR = os.getenv("GENERATED_DIR", _default_dir)
+OUTPUT_DIR = os.getenv("GENERATED_DIR", "/tmp/generated")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
@@ -170,5 +168,6 @@ async def generate_document(req: GenerateDocRequest) -> GenerateDocResponse:
         return GenerateDocResponse(success=True, filename=filename, url=url, content_b64=content_b64)
 
     except Exception as e:
-        logger.error(f"[generate_document] failed: {e}")
-        return GenerateDocResponse(success=False, error=str(e))
+        import traceback
+        logger.error(f"[generate_document] failed: {e}\n{traceback.format_exc()}")
+        return GenerateDocResponse(success=False, error=f"{type(e).__name__}: {e}")

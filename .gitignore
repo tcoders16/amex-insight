@@ -61,3 +61,4 @@ amex-insight-mcp/.venv/
 # ── Keep production data ─────────────────────────────────────────────
 # bm25.pkl and index.db ARE committed (real AMEX 10-K index, ~8.4 MB)
 # Do NOT add amex-insight-mcp/data/ to .gitignore
+email-mcp/.env
