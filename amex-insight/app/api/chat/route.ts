@@ -9,7 +9,7 @@ import {
   sendEmailSummary,
   generateDocument,
 } from "@/lib/mcp-client"
-import type { AgentStep, Citation, SessionMemory } from "@/lib/types"
+import type { AgentStep, Citation, GeneratedDoc, SessionMemory } from "@/lib/types"
 
 // ─── Memory extractor ─────────────────────────────────────────────────────────
 // Pulls key financial facts from retrieved chunk text.
@@ -242,6 +242,7 @@ export async function POST(req: Request) {
   ;(async () => {
     const startedAt      = Date.now()
     const allCitations: Citation[]  = []
+    const allGeneratedDocs: GeneratedDoc[] = []
     const allChunks: Array<{ doc_id: string; page_num: number; section: string; text: string }> = []
     let   totalRetries   = 0
     let   totalDlq       = 0
@@ -365,6 +366,16 @@ export async function POST(req: Request) {
                     args.sections as { heading: string; body: string }[],
                     args.subtitle as string | undefined,
                   )
+                  if (mcpResult?.result) {
+                    const r = mcpResult.result as { filename?: string; url?: string }
+                    if (r.filename && r.url) {
+                      allGeneratedDocs.push({
+                        filename: r.filename,
+                        url:      r.url,
+                        docType:  args.doc_type as "word" | "ppt",
+                      })
+                    }
+                  }
                   addStep({
                     id:     `doc-${Date.now()}`,
                     type:   "tool_call",
@@ -463,13 +474,14 @@ export async function POST(req: Request) {
           )
 
           write({
-            type:         "done",
-            citations:    dedup,
-            faithfulness: finalFaithfulness,
-            confidence:   finalConfidence,
-            dlqEntries:   totalDlq,
-            retries:      totalRetries,
-            durationMs:   Date.now() - startedAt,
+            type:          "done",
+            citations:     dedup,
+            generatedDocs: allGeneratedDocs,
+            faithfulness:  finalFaithfulness,
+            confidence:    finalConfidence,
+            dlqEntries:    totalDlq,
+            retries:       totalRetries,
+            durationMs:    Date.now() - startedAt,
             memories,
           })
 

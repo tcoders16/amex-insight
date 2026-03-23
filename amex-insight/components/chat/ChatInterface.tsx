@@ -439,7 +439,7 @@ export default function ChatInterface() {
                 setStats(prev => ({ ...prev, toolCalls: prev.toolCalls + 1 }))
             }
             if (event.type === "done") {
-              const { citations, faithfulness, confidence, dlqEntries, retries, memories: newMems } = event
+              const { citations, generatedDocs, faithfulness, confidence, dlqEntries, retries, memories: newMems } = event
               if (newMems?.length) {
                 setMemories(prev => {
                   // Dedupe by fact text, keep max 30 across session
@@ -464,6 +464,7 @@ export default function ChatInterface() {
               setMessages(prev => prev.map(m =>
                 m.id === assistantId
                   ? { ...m, streaming: false, citations: citations ?? [],
+                      generatedDocs: generatedDocs ?? [],
                       faithfulness, confidence, dlqEntries: dlqEntries ?? 0, retries: retries ?? 0 }
                   : m
               ))

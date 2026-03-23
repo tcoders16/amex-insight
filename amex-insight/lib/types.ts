@@ -96,12 +96,19 @@ export interface AgentStep {
 
 export type MessageRole = "user" | "assistant"
 
+export interface GeneratedDoc {
+  filename: string
+  url:      string
+  docType:  "word" | "ppt"
+}
+
 export interface ChatMessage {
   id:          string
   role:        MessageRole
   content:     string
   steps?:      AgentStep[]
   citations?:  Citation[]
+  generatedDocs?: GeneratedDoc[]
   confidence?: number
   faithfulness?: number
   dlqEntries?: number
