@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { clsx } from "clsx"
 import { SquarePen } from "lucide-react"
+import { LiveVisitors } from "./LiveVisitors"
 
 const NAV = [
   { href: "/",             label: "Chat" },
@@ -76,6 +77,10 @@ export function Navbar() {
             <span className="w-1.5 h-1.5 rounded-full bg-accent-green animate-pulse-slow" />
             <span className="font-mono">MCP ONLINE</span>
           </div>
+
+          <div className="w-px h-4 bg-border" />
+
+          <LiveVisitors />
         </div>
       </div>
     </header>
