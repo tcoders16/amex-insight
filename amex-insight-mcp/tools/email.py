@@ -186,9 +186,10 @@ def _build_html(req: EmailRequest) -> str:
 
 @trace_tool("send_email_summary")
 async def send_email_summary(req: EmailRequest) -> EmailResponse:
-    """Auto-send formatted financial insight to emailtosolankiom@gmail.com via Gmail SMTP."""
-    # Always override to the correct address
-    req = req.model_copy(update={"to": TO_EMAIL})
+    """Send formatted financial insight via Gmail SMTP to the specified address."""
+    # Fall back to default address if none provided
+    if not req.to:
+        req = req.model_copy(update={"to": TO_EMAIL})
 
     try:
         subject = req.subject or f"AmexInsight: {req.query[:60]}"

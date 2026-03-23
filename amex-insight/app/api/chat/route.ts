@@ -171,10 +171,11 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     type: "function",
     function: {
       name:        "send_email_summary",
-      description: "Email a financial insight summary to emailtosolankiom@gmail.com. ALWAYS call this automatically after every final answer — summary, KPI report, comparison, risk assessment, or document. Never skip this step. Always use to=emailtosolankiom@gmail.com.",
+      description: "Email a financial insight summary via Gmail. ALWAYS call this automatically after every final answer — summary, KPI report, comparison, risk assessment, or document. Never skip this step. If the user specifies a recipient email, use that. Otherwise default to emailtosolankiom@gmail.com.",
       parameters: {
         type: "object",
         properties: {
+          to:               { type: "string", description: "Recipient email address. Default: emailtosolankiom@gmail.com" },
           query:            { type: "string", description: "The original user question" },
           summary:          { type: "string", description: "The full grounded answer to email" },
           confidence_score: { type: "number", description: "Faithfulness score 0-1" },
@@ -196,8 +197,9 @@ INDEXED DOCUMENTS (use these exact doc_id values):
 - 2024-10k  — AMEX 2024 Annual Report (10-K)
 - multi-year — Cross-year comparative data
 
-DELIVERY EMAIL: emailtosolankiom@gmail.com
-Always send to this address. Never ask the user for an email address.
+DELIVERY EMAIL: emailtosolankiom@gmail.com (default)
+If the user says "send to X@example.com" or "email this to ...", use that address in the to field.
+Otherwise always default to emailtosolankiom@gmail.com. Never ask the user for an email address.
 
 RULES:
 1. ALWAYS call search_financial_docs first before any other tool. Never answer from memory alone.
@@ -209,7 +211,7 @@ RULES:
 7. Always cite sources: document name and page number.
 8. If you cannot find grounded information, say so clearly. Never fabricate.
 9. For financial figures, be precise. Wrong numbers are worse than no numbers.
-10. ALWAYS call send_email_summary after producing any final answer — summary, KPI report, comparison, risk assessment, or document generation. Use to=emailtosolankiom@gmail.com. Do this automatically without waiting for the user to ask.
+10. ALWAYS call send_email_summary after producing any final answer — summary, KPI report, comparison, risk assessment, or document generation. If the user specified a recipient email address, use that in the to field. Otherwise default to emailtosolankiom@gmail.com. Do this automatically without waiting for the user to ask.
 11. When asked to generate a Word doc or PPT: call generate_document with relevant sections built from retrieved content, then call send_email_summary with the download URL included in the summary field.`
 
 // ─── SSE helpers ─────────────────────────────────────────────────────────────
@@ -384,21 +386,24 @@ export async function POST(req: Request) {
                     durationMs: mcpResult?.durationMs,
                   })
                   break
-                case "send_email_summary":
+                case "send_email_summary": {
+                  const toAddr = (args.to as string | undefined) || "emailtosolankiom@gmail.com"
                   mcpResult = await sendEmailSummary(
                     args.query,
                     args.summary,
                     args.confidence_score ?? finalConfidence ?? 1.0,
                     allCitations.slice(0, 5),
+                    toAddr,
                   )
                   addStep({
                     id:     `email-${Date.now()}`,
                     type:   "tool_call",
-                    label:  `Email sent → tosolankiom@gmail.com`,
-                    status: mcpResult?.result?.success ? "done" : "error",
+                    label:  `Email sent → ${toAddr}`,
+                    status: (mcpResult?.result as any)?.success ? "done" : "error",
                     durationMs: mcpResult?.durationMs,
                   })
                   break
+                }
                 default:
                   mcpResult = { result: null, error: "Unknown tool", durationMs: 0, retries: 0 }
               }
