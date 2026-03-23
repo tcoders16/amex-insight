@@ -1,44 +1,58 @@
 """
 email-mcp — standalone email MCP server for Claude Desktop
-Uses Resend (free tier: 3,000 emails/month)
+Uses Gmail SMTP (free, no third-party service)
 
 Tools:
   send_email            — send any email (to, subject, body)
-  send_financial_brief  — send a formatted AMEX insight summary
-  preview_email         — preview the HTML without sending (dry run)
+  send_financial_brief  — send a formatted AmexInsight summary
+  preview_email         — preview HTML without sending (dry run)
+
+Required env vars:
+  GMAIL_USER      — your Gmail address  (e.g. you@gmail.com)
+  GMAIL_APP_PASS  — 16-char app password from myaccount.google.com/apppasswords
 """
 
 from __future__ import annotations
 
 import os
 import json
-import httpx
-from datetime import datetime
-from mcp.server.fastmcp import FastMCP
+import smtplib
+from email.mime.text        import MIMEText
+from email.mime.multipart   import MIMEMultipart
+from datetime               import datetime
+from mcp.server.fastmcp     import FastMCP
 
 mcp = FastMCP("email-mcp")
 
-RESEND_API_URL = "https://api.resend.com/emails"
-FROM_ADDRESS   = "AmexInsight <onboarding@resend.dev>"
+SMTP_HOST = "smtp.gmail.com"
+SMTP_PORT = 587
 
 
-def _get_key() -> str:
-    key = os.getenv("RESEND_API_KEY", "")
-    if not key:
-        raise ValueError("RESEND_API_KEY env var is not set. Get a free key at resend.com")
-    return key
+def _creds() -> tuple[str, str]:
+    user = os.getenv("GMAIL_USER", "")
+    pwd  = os.getenv("GMAIL_APP_PASS", "")
+    if not user or not pwd:
+        raise ValueError("GMAIL_USER and GMAIL_APP_PASS env vars must be set")
+    return user, pwd
 
 
-def _send(to: str, subject: str, html: str) -> dict:
-    """Core Resend API call."""
-    resp = httpx.post(
-        RESEND_API_URL,
-        json={"from": FROM_ADDRESS, "to": [to], "subject": subject, "html": html},
-        headers={"Authorization": f"Bearer {_get_key()}"},
-        timeout=15.0,
-    )
-    resp.raise_for_status()
-    return resp.json()
+def _send(to: str, subject: str, html: str) -> str:
+    """Core Gmail SMTP send — returns message id string."""
+    user, pwd = _creds()
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"]    = f"AmexInsight <{user}>"
+    msg["To"]      = to
+    msg.attach(MIMEText(html, "html"))
+
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as smtp:
+        smtp.ehlo()
+        smtp.starttls()
+        smtp.login(user, pwd)
+        smtp.sendmail(user, [to], msg.as_string())
+
+    return f"sent:{to}"
 
 
 def _financial_html(query: str, summary: str, confidence: float, citations: list[dict]) -> str:
@@ -75,7 +89,6 @@ def _financial_html(query: str, summary: str, confidence: float, citations: list
 <body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
   <div style="max-width:640px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
 
-    <!-- Header -->
     <div style="background:linear-gradient(135deg,#1d4ed8,#7c3aed);padding:28px 32px">
       <div style="display:flex;align-items:center;gap:12px">
         <div style="width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:8px;
@@ -88,7 +101,6 @@ def _financial_html(query: str, summary: str, confidence: float, citations: list
       </div>
     </div>
 
-    <!-- Body -->
     <div style="padding:32px">
       <p style="color:#666;font-size:13px;margin:0 0 8px">Query</p>
       <p style="color:#1a1a2e;font-size:15px;font-style:italic;margin:0 0 24px;
@@ -107,10 +119,9 @@ def _financial_html(query: str, summary: str, confidence: float, citations: list
       {citations_html}
     </div>
 
-    <!-- Footer -->
     <div style="padding:16px 32px;background:#f8f9fa;border-top:1px solid #eee">
       <p style="color:#999;font-size:11px;margin:0;font-family:monospace">
-        Sent by AmexInsight MCP · {ts} · BM25 + FTS5 + Cross-Encoder RAG · Faithfulness verified
+        Sent by AmexInsight email-mcp · {ts} · Gmail SMTP · BM25 + FTS5 RAG · Faithfulness verified
       </p>
     </div>
   </div>
@@ -123,27 +134,23 @@ def _financial_html(query: str, summary: str, confidence: float, citations: list
 @mcp.tool()
 def send_email(to: str, subject: str, body: str) -> str:
     """
-    Send a plain email via Resend.
+    Send a plain email via Gmail SMTP.
 
     Args:
         to:      Recipient email address
         subject: Email subject line
-        body:    Email body text (plain text — auto-wrapped in simple HTML)
-
-    Returns:
-        JSON string with {success, message_id, error}
+        body:    Email body (plain text)
     """
     html = f"""<div style="font-family:sans-serif;max-width:600px;margin:auto;padding:24px;line-height:1.7">
         {body.replace(chr(10), '<br>')}
         <hr style="border:none;border-top:1px solid #eee;margin-top:32px">
-        <p style="font-size:11px;color:#999;font-family:monospace">Sent by AmexInsight email-mcp</p>
+        <p style="font-size:11px;color:#999;font-family:monospace">Sent via AmexInsight email-mcp</p>
     </div>"""
-
     try:
-        data = _send(to, subject, html)
-        return json.dumps({"success": True, "message_id": data.get("id", ""), "error": ""})
+        _send(to, subject, html)
+        return json.dumps({"success": True, "error": ""})
     except Exception as e:
-        return json.dumps({"success": False, "message_id": "", "error": str(e)})
+        return json.dumps({"success": False, "error": str(e)})
 
 
 # ─── Tool 2: send_financial_brief ────────────────────────────────────────────
@@ -157,17 +164,14 @@ def send_financial_brief(
     citations:  str   = "[]",
 ) -> str:
     """
-    Send a beautifully formatted AmexInsight financial summary email.
+    Send a beautifully formatted AmexInsight financial summary email via Gmail.
 
     Args:
         to:         Recipient email address
         query:      The original question that was answered
         summary:    The grounded answer text
-        confidence: Faithfulness score 0.0–1.0 (shown as a badge)
-        citations:  JSON array of citation objects [{doc, page, section, score}]
-
-    Returns:
-        JSON string with {success, message_id, error}
+        confidence: Faithfulness score 0.0–1.0
+        citations:  JSON array [{doc, page, section, score}]
     """
     try:
         cits = json.loads(citations) if isinstance(citations, str) else citations
@@ -176,29 +180,19 @@ def send_financial_brief(
 
     subject = f"AmexInsight: {query[:55]}{'...' if len(query) > 55 else ''}"
     html    = _financial_html(query, summary, confidence, cits)
-
     try:
-        data = _send(to, subject, html)
-        return json.dumps({"success": True, "message_id": data.get("id", ""), "error": ""})
+        _send(to, subject, html)
+        return json.dumps({"success": True, "error": ""})
     except Exception as e:
-        return json.dumps({"success": False, "message_id": "", "error": str(e)})
+        return json.dumps({"success": False, "error": str(e)})
 
 
 # ─── Tool 3: preview_email ────────────────────────────────────────────────────
 
 @mcp.tool()
-def preview_email(
-    query:      str,
-    summary:    str,
-    confidence: float = 0.95,
-    citations:  str   = "[]",
-) -> str:
+def preview_email(query: str, summary: str, confidence: float = 0.95, citations: str = "[]") -> str:
     """
-    Dry-run: generate the HTML email without sending it.
-    Useful to verify formatting before sending.
-
-    Returns:
-        The raw HTML string (first 800 chars as preview + char count)
+    Dry-run: generate the HTML email without sending. Returns html_length + preview.
     """
     try:
         cits = json.loads(citations) if isinstance(citations, str) else citations
@@ -206,15 +200,8 @@ def preview_email(
         cits = []
 
     html = _financial_html(query, summary, confidence, cits)
-    preview = html[:800].replace("<", "&lt;").replace(">", "&gt;")
-    return json.dumps({
-        "html_length":   len(html),
-        "preview":       preview,
-        "would_send_to": "not sent — dry run",
-    })
+    return json.dumps({"html_length": len(html), "preview": html[:500], "status": "not sent — dry run"})
 
-
-# ─── Entry point ─────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     mcp.run(transport="stdio")

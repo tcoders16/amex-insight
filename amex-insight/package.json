@@ -11,6 +11,7 @@
     "eval": "npx tsx evals/run-eval.ts"
   },
   "dependencies": {
+    "@upstash/redis": "^1.37.0",
     "ai": "^4.0.0",
     "clsx": "^2.1.1",
     "framer-motion": "^11.15.0",
