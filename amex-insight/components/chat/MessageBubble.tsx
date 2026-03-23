@@ -30,10 +30,10 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     <div className="flex flex-col gap-2 animate-slide-up">
       <div className="flex items-start gap-3">
 
-        {/* Avatar — solid brand blue, no gradient */}
-        <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-accent-blue
+        {/* Avatar */}
+        <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-accent-blue
                         flex items-center justify-center shadow-card mt-0.5">
-          <span className="text-white font-heading font-bold text-[11px] tracking-wide">AI</span>
+          <span className="text-white font-mono font-black text-[11px] tracking-widest">AI</span>
         </div>
 
         <div className="flex-1 min-w-0 pt-0.5">

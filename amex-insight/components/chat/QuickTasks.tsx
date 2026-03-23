@@ -1,6 +1,7 @@
 "use client"
 
 import { FileText, TrendingUp, Search, AlertTriangle, BarChart2, Sparkles, Shield, Database } from "lucide-react"
+import { MovieScriptDemo } from "./MovieScriptDemo"
 
 const TASKS = [
   {
@@ -125,6 +126,8 @@ export function QuickTasks({ onSelect, disabled }: QuickTasksProps) {
       <p className="text-center text-[11.5px] font-mono text-ink-faint/70">
         or type your own question below ↓
       </p>
+
+      <MovieScriptDemo />
     </div>
   )
 }

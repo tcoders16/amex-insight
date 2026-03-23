@@ -5,6 +5,7 @@ export interface Citation {
   page:    number
   section: string
   score:   number
+  text?:   string   // exact chunk text retrieved from the document
 }
 
 export interface RetrievedChunk {

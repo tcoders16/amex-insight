@@ -293,7 +293,7 @@ export async function POST(req: Request) {
                   if (mcpResult.result) {
                     const r = mcpResult.result as { chunks?: Array<{ doc_id: string; page_num: number; section: string; score: number; text: string }> }
                     r.chunks?.forEach(c => {
-                      allCitations.push({ doc: c.doc_id, page: c.page_num, section: c.section, score: c.score })
+                      allCitations.push({ doc: c.doc_id, page: c.page_num, section: c.section, score: c.score, text: c.text })
                       allChunks.push({ doc_id: c.doc_id, page_num: c.page_num, section: c.section, text: c.text })
                     })
                   }
@@ -399,14 +399,14 @@ export async function POST(req: Request) {
 
           updateStep(synthStep.id, { status: "done", durationMs: Date.now() - startedAt })
 
-          // Dedupe citations
-          const seen  = new Set<string>()
-          const dedup = allCitations.filter(c => {
+          // Dedupe citations — keep highest-score chunk per doc+page (preserves text)
+          const seenMap = new Map<string, Citation>()
+          for (const c of allCitations) {
             const key = `${c.doc}-${c.page}`
-            if (seen.has(key)) return false
-            seen.add(key)
-            return true
-          }).slice(0, 8)
+            const existing = seenMap.get(key)
+            if (!existing || c.score > (existing.score ?? 0)) seenMap.set(key, c)
+          }
+          const dedup = Array.from(seenMap.values()).slice(0, 8)
 
           const memories = extractMemoriesFromChunks(
             allChunks,

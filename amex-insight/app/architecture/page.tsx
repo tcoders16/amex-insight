@@ -294,6 +294,74 @@ export default function ArchitecturePage() {
           </div>
         </Section>
 
+        {/* ── Citation Pipeline ───────────────────────────────────────── */}
+        <Section id="citation-pipeline" label="Citation Pipeline · How Every Answer Is Traced">
+          <div className="space-y-3">
+
+            {/* Flow diagram */}
+            <div className="p-5 rounded-xl border border-border bg-surface-1">
+              <p className="text-[11px] font-mono text-ink-faint uppercase tracking-wider mb-4">
+                Deep research flow — from user question to cited passage
+              </p>
+              <div className="space-y-2">
+                {[
+                  { n: "01", label: "User asks a question",                          detail: "e.g. 'What was card member spending growth in 2024?'" },
+                  { n: "02", label: "GPT-4o decomposes the query",                   detail: "Plans which documents and years are relevant. Calls search_financial_docs." },
+                  { n: "03", label: "BM25 + FTS5 retrieves 12 candidate chunks",     detail: "SQLite FTS5 full-text + rank_bm25 in-memory. Sub-100ms. Source: AMEX 10-K 2020–2024." },
+                  { n: "04", label: "MS-MARCO cross-encoder reranks to top-4",       detail: "Semantic scoring. Eliminates keyword matches with wrong meaning. Assigns relevance score 0–1." },
+                  { n: "05", label: "Each chunk tagged: doc_id · page · section · score · text", detail: "e.g. { doc_id: '2024-10k', page_num: 34, section: 'MD&A', score: 0.94, text: '…' }" },
+                  { n: "06", label: "validate_faithfulness checks answer vs chunks",  detail: "NLI model. Does every claim in the answer exist word-for-word in the retrieved text? Threshold 0.75." },
+                  { n: "07", label: "Citations + raw chunk text sent to UI",          detail: "The done event carries citations[] with full text. UI stores all chunks keyed by doc+page." },
+                  { n: "08", label: "User clicks page chip → sees exact passage",     detail: "The CitationCard expands to show the verbatim text. Financial figures highlighted in blue. SEC EDGAR link to original page." },
+                ].map(step => (
+                  <div key={step.n} className="flex items-start gap-3 p-3 rounded-lg bg-surface-2 border border-border">
+                    <span className="text-[10px] font-mono font-bold text-accent-blue bg-accent-blue/10
+                                     border border-accent-blue/20 px-1.5 py-0.5 rounded flex-shrink-0">
+                      {step.n}
+                    </span>
+                    <div>
+                      <p className="text-[12px] font-medium text-ink leading-snug">{step.label}</p>
+                      <p className="text-[11px] font-mono text-ink-faint mt-0.5 leading-relaxed">{step.detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Source documents indexed */}
+            <div className="p-5 rounded-xl border border-emerald-200 bg-emerald-50">
+              <div className="flex items-center gap-2 mb-3">
+                <Database className="w-4 h-4 text-emerald-600" />
+                <span className="text-sm font-heading font-semibold text-emerald-700">
+                  Source Documents Indexed
+                </span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {[
+                  { id: "2024-10k", label: "AMEX 2024 Annual Report", badge: "10-K · FY 2024" },
+                  { id: "2023-10k", label: "AMEX 2023 Annual Report", badge: "10-K · FY 2023" },
+                  { id: "2022-10k", label: "AMEX 2022 Annual Report", badge: "10-K · FY 2022" },
+                  { id: "2021-10k", label: "AMEX 2021 Annual Report", badge: "10-K · FY 2021" },
+                  { id: "2020-10k", label: "AMEX 2020 Annual Report", badge: "10-K · FY 2020" },
+                  { id: "multi-year", label: "Cross-Year Comparative",  badge: "Multi · 2020–2024" },
+                ].map(doc => (
+                  <div key={doc.id}
+                    className="p-2.5 rounded-lg border border-emerald-200 bg-white text-xs">
+                    <p className="font-semibold text-ink text-[11px] leading-snug">{doc.label}</p>
+                    <p className="font-mono text-emerald-600 text-[10px] mt-0.5">{doc.badge}</p>
+                    <p className="font-mono text-ink-faint text-[9px] mt-0.5">SEC EDGAR · CIK 0000004962</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] font-mono text-emerald-600 mt-3">
+                Every passage shown to users maps to an exact page in one of these filings.
+                No synthetic data. No fabricated numbers.
+              </p>
+            </div>
+
+          </div>
+        </Section>
+
         {/* ── Architecture Decisions ──────────────────────────────────── */}
         <Section id="decisions" label="Architecture Decisions">
           <div className="space-y-3">
@@ -499,6 +567,8 @@ function ExpandRag() {
       <p className="text-ink-muted">• <strong className="text-ink">rank_bm25</strong> — BM25Okapi in-memory index. Fast candidate generation. Rebuilt on new document ingestion.</p>
       <p className="text-ink-muted">• <strong className="text-ink">Cross-encoder reranker</strong> — MS-MARCO MiniLM. Top-12 BM25 candidates → top-4 by semantic score. This IS the semantic layer.</p>
       <p className="text-ink-muted">• <strong className="text-ink">Contextual indexing</strong> — 2-sentence GPT-4o context prepended to every chunk at index time. ~49% fewer retrieval failures.</p>
+      <p className="text-ink-muted">• <strong className="text-ink">Citation tracing</strong> — Every retrieved chunk carries doc_id, page_num, section, cross-encoder score, and exact text back to the UI. Users can expand any citation to read the exact passage the answer was grounded in.</p>
+      <p className="text-ink-muted">• <strong className="text-ink">Source documents</strong> — AMEX 10-K filings (2020–2024) indexed from SEC EDGAR. CIK 0000004962. Each chunk maps to a precise page and section of the original document.</p>
     </div>
   )
 }
