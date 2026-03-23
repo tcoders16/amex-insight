@@ -26,6 +26,7 @@ TO_EMAIL  = "emailtosolankiom@gmail.com"
 
 
 def _send_gmail(to: str, subject: str, html: str,
+                from_name: str = "AmexInsight",
                 attachment_b64: str = "", attachment_filename: str = "") -> None:
     user = os.getenv("GMAIL_USER", "")
     pwd  = os.getenv("GMAIL_APP_PASS", "")
@@ -35,7 +36,7 @@ def _send_gmail(to: str, subject: str, html: str,
     # mixed = html + optional attachment
     msg = MIMEMultipart("mixed")
     msg["Subject"] = subject
-    msg["From"]    = f"AmexInsight <{user}>"
+    msg["From"]    = f"{from_name} <{user}>"
     msg["To"]      = to
 
     # HTML part
@@ -241,8 +242,9 @@ async def send_email_summary(req: EmailRequest) -> EmailResponse:
         req = req.model_copy(update={"to": TO_EMAIL})
 
     try:
-        subject = req.subject or f"AmexInsight: {req.query[:60]}"
+        subject = req.subject or f"{req.from_name}: {req.query[:60]}"
         _send_gmail(req.to, subject, _build_html(req),
+                    from_name=req.from_name,
                     attachment_b64=req.attachment_b64,
                     attachment_filename=req.attachment_filename)
         logger.info(f"[email] sent to={req.to} query={req.query[:40]}")

@@ -263,25 +263,39 @@ async def generate_document(
 
 @mcp.tool()
 async def send_email_summary(
-    query:            str,
-    summary:          str,
-    to:               str   = "emailtosolankiom@gmail.com",
-    confidence_score: float = 1.0,
+    query:               str,
+    summary:             str,
+    to:                  str   = "emailtosolankiom@gmail.com",
+    from_name:           str   = "AmexInsight",
+    subject:             str   = "",
+    confidence_score:    float = 1.0,
+    attachment_b64:      str   = "",
+    attachment_filename: str   = "",
 ) -> dict:
     """
-    Email a financial analysis summary via Gmail SMTP.
-    Sends a styled HTML email with confidence score and citations.
+    Send a financial insight email via Gmail SMTP with optional file attachment.
 
     Args:
-        query:            The original financial question
-        summary:          The AI-generated answer to send
-        to:               Recipient email (default: emailtosolankiom@gmail.com)
-        confidence_score: Faithfulness score 0–1 shown in email badge
+        query:               The original financial question
+        summary:             The full grounded answer to send
+        to:                  Recipient email (default: emailtosolankiom@gmail.com)
+        from_name:           Sender display name (default: AmexInsight)
+        subject:             Email subject — auto-generated from query if not provided
+        confidence_score:    Faithfulness score 0–1 shown in email badge
+        attachment_b64:      Base64-encoded file bytes for Word/PPT attachment
+        attachment_filename: Filename for the attachment e.g. Report.docx
     """
     from tools.email import send_email_summary as _fn
     from schemas.models import EmailRequest
     result = await _fn(EmailRequest(
-        to=to, query=query, summary=summary, confidence_score=confidence_score,
+        to=to,
+        from_name=from_name,
+        subject=subject,
+        query=query,
+        summary=summary,
+        confidence_score=confidence_score,
+        attachment_b64=attachment_b64,
+        attachment_filename=attachment_filename,
     ))
     return result.model_dump()
 

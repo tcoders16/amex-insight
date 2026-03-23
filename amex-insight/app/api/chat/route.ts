@@ -171,11 +171,13 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     type: "function",
     function: {
       name:        "send_email_summary",
-      description: "Email a financial insight summary via Gmail. ALWAYS call this automatically after every final answer — summary, KPI report, comparison, risk assessment, or document. Never skip this step. If the user specifies a recipient email, use that. Otherwise default to emailtosolankiom@gmail.com.",
+      description: "Email a financial insight summary via Gmail. ALWAYS call this automatically after every final answer — summary, KPI report, comparison, risk assessment, or document. Never skip this step. Use the user-specified recipient if provided, otherwise default to emailtosolankiom@gmail.com.",
       parameters: {
         type: "object",
         properties: {
           to:               { type: "string", description: "Recipient email address. Default: emailtosolankiom@gmail.com" },
+          from_name:        { type: "string", description: "Sender display name shown in the From field. Default: AmexInsight" },
+          subject:          { type: "string", description: "Email subject line. Auto-generated from query if not provided." },
           query:            { type: "string", description: "The original user question" },
           summary:          { type: "string", description: "The full grounded answer to email" },
           confidence_score: { type: "number", description: "Faithfulness score 0-1" },
@@ -392,8 +394,10 @@ export async function POST(req: Request) {
                   })
                   break
                 case "send_email_summary": {
-                  const toAddr = (args.to as string | undefined) || "emailtosolankiom@gmail.com"
-                  const attach = pendingAttachment
+                  const toAddr    = (args.to as string | undefined)        || "emailtosolankiom@gmail.com"
+                  const fromName  = (args.from_name as string | undefined) || "AmexInsight"
+                  const subject   = (args.subject as string | undefined)   || ""
+                  const attach    = pendingAttachment
                   pendingAttachment = null   // consume it
                   mcpResult = await sendEmailSummary(
                     args.query,
@@ -403,6 +407,8 @@ export async function POST(req: Request) {
                     toAddr,
                     attach?.content_b64 ?? "",
                     attach?.filename ?? "",
+                    fromName,
+                    subject,
                   )
                   addStep({
                     id:     `email-${Date.now()}`,

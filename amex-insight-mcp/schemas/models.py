@@ -212,7 +212,8 @@ class DeleteSavedChatResponse(BaseModel):
 
 class EmailRequest(BaseModel):
     to:                  str        = Field(default="emailtosolankiom@gmail.com", min_length=5, max_length=200)
-    subject:             str        = Field(default="", max_length=200)
+    from_name:           str        = Field(default="AmexInsight")              # display name in From header
+    subject:             str        = Field(default="", max_length=300)
     query:               str        = Field(min_length=1, max_length=500)
     summary:             str        = Field(min_length=1, max_length=5000)
     confidence_score:    float      = Field(default=1.0, ge=0.0, le=1.0)
