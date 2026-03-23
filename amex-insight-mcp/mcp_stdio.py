@@ -12,6 +12,10 @@ import os
 import sys
 import logging
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load .env from same directory as this script (fallback when env not injected by Claude Desktop)
+load_dotenv(dotenv_path=Path(__file__).parent / ".env")
 
 # ── Silence all noisy output so stdio JSON-RPC stays clean ───────────────────
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")

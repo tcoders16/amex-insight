@@ -246,6 +246,8 @@ export async function POST(req: Request) {
     const allCitations: Citation[]  = []
     const allGeneratedDocs: GeneratedDoc[] = []
     const allChunks: Array<{ doc_id: string; page_num: number; section: string; text: string }> = []
+    // Last generated doc attachment — passed to the next send_email_summary call
+    let pendingAttachment: { filename: string; content_b64: string } | null = null
     let   totalRetries   = 0
     let   totalDlq       = 0
     let   finalFaithfulness: number | undefined
@@ -369,13 +371,16 @@ export async function POST(req: Request) {
                     args.subtitle as string | undefined,
                   )
                   if (mcpResult?.result) {
-                    const r = mcpResult.result as { filename?: string; url?: string }
+                    const r = mcpResult.result as { filename?: string; url?: string; content_b64?: string }
                     if (r.filename && r.url) {
                       allGeneratedDocs.push({
                         filename: r.filename,
                         url:      r.url,
                         docType:  args.doc_type as "word" | "ppt",
                       })
+                      if (r.content_b64) {
+                        pendingAttachment = { filename: r.filename, content_b64: r.content_b64 }
+                      }
                     }
                   }
                   addStep({
@@ -388,12 +393,16 @@ export async function POST(req: Request) {
                   break
                 case "send_email_summary": {
                   const toAddr = (args.to as string | undefined) || "emailtosolankiom@gmail.com"
+                  const attach = pendingAttachment
+                  pendingAttachment = null   // consume it
                   mcpResult = await sendEmailSummary(
                     args.query,
                     args.summary,
                     args.confidence_score ?? finalConfidence ?? 1.0,
                     allCitations.slice(0, 5),
                     toAddr,
+                    attach?.content_b64 ?? "",
+                    attach?.filename ?? "",
                   )
                   addStep({
                     id:     `email-${Date.now()}`,

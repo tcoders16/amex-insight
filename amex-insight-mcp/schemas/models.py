@@ -211,12 +211,14 @@ class DeleteSavedChatResponse(BaseModel):
 # ─── send_email_summary ──────────────────────────────────────────────────────
 
 class EmailRequest(BaseModel):
-    to:               str        = Field(default="emailtosolankiom@gmail.com", min_length=5, max_length=200)
-    subject:          str        = Field(default="", max_length=200)
-    query:            str        = Field(min_length=1, max_length=500)
-    summary:          str        = Field(min_length=1, max_length=5000)
-    confidence_score: float      = Field(default=1.0, ge=0.0, le=1.0)
-    citations:        list[dict] = Field(default_factory=list)
+    to:                  str        = Field(default="emailtosolankiom@gmail.com", min_length=5, max_length=200)
+    subject:             str        = Field(default="", max_length=200)
+    query:               str        = Field(min_length=1, max_length=500)
+    summary:             str        = Field(min_length=1, max_length=5000)
+    confidence_score:    float      = Field(default=1.0, ge=0.0, le=1.0)
+    citations:           list[dict] = Field(default_factory=list)
+    attachment_b64:      str        = Field(default="")   # base64-encoded file bytes
+    attachment_filename: str        = Field(default="")   # e.g. "Report.docx"
 
 
 class EmailResponse(BaseModel):

@@ -158,7 +158,9 @@ export async function sendEmailSummary(
   summary: string,
   confidenceScore: number,
   citations: { doc: string; page: number; score: number }[] = [],
-  to = "emailtosolankiom@gmail.com"
+  to = "emailtosolankiom@gmail.com",
+  attachmentB64 = "",
+  attachmentFilename = ""
 ): Promise<McpToolResult> {
   return callTool("send_email_summary", {
     to,
@@ -166,6 +168,8 @@ export async function sendEmailSummary(
     summary,
     confidence_score: confidenceScore,
     citations: citations.map(c => ({ doc: c.doc, page: c.page, score: c.score })),
+    attachment_b64:      attachmentB64,
+    attachment_filename: attachmentFilename,
   })
 }
 

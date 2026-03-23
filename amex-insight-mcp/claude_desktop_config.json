@@ -16,7 +16,9 @@
       ],
       "env": {
         "MCP_SHARED_SECRET": "29726a71863bde75589ac18339d54910ae0841d96b22ef5c97af89e5949e9080",
-        "PYTHONPATH": "/Users/omkumarsolanki/WorkSpace/AMEX/funproject/amex-insight-mcp"
+        "PYTHONPATH": "/Users/omkumarsolanki/WorkSpace/AMEX/funproject/amex-insight-mcp",
+        "GMAIL_USER":     "emailtosolankiom@gmail.com",
+        "GMAIL_APP_PASS": "fhxdssgivypekwkf"
       }
     },
     "email-mcp": {
@@ -25,7 +27,8 @@
         "/Users/omkumarsolanki/WorkSpace/AMEX/funproject/email-mcp/server.py"
       ],
       "env": {
-        "RESEND_API_KEY": "YOUR_RESEND_API_KEY_HERE"
+        "GMAIL_USER":     "emailtosolankiom@gmail.com",
+        "GMAIL_APP_PASS": "fhxdssgivypekwkf"
       }
     }
   }

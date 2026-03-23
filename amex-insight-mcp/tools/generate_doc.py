@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import os
 import uuid
+import base64
 import logging
 from datetime import datetime
 from typing import Literal
@@ -14,7 +15,9 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
-OUTPUT_DIR = os.path.join(os.getenv("GENERATED_DIR", "/tmp/generated"))
+# Use /home/generated on Azure (persistent storage), /tmp/generated locally
+_default_dir = "/home/generated" if os.path.exists("/home") and os.getenv("WEBSITE_SITE_NAME") else "/tmp/generated"
+OUTPUT_DIR = os.getenv("GENERATED_DIR", _default_dir)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
@@ -32,10 +35,11 @@ class GenerateDocRequest(BaseModel):
 
 
 class GenerateDocResponse(BaseModel):
-    success:   bool
-    filename:  str = ""
-    url:       str = ""
-    error:     str = ""
+    success:     bool
+    filename:    str = ""
+    url:         str = ""
+    content_b64: str = ""   # base64-encoded file bytes for email attachment
+    error:       str = ""
 
 
 def _make_word(req: GenerateDocRequest, filename: str) -> str:
@@ -157,8 +161,13 @@ async def generate_document(req: GenerateDocRequest) -> GenerateDocResponse:
         base_url = os.getenv("MCP_BASE_URL", "https://mcp-v2-h4axdpfmgqa2htbk.canadacentral-01.azurewebsites.net")
         url = f"{base_url}/files/{filename}"
 
+        # Read file and base64-encode for email attachment
+        file_path = os.path.join(OUTPUT_DIR, filename)
+        with open(file_path, "rb") as f:
+            content_b64 = base64.b64encode(f.read()).decode()
+
         logger.info(f"[generate_document] {ext} created: {filename}")
-        return GenerateDocResponse(success=True, filename=filename, url=url)
+        return GenerateDocResponse(success=True, filename=filename, url=url, content_b64=content_b64)
 
     except Exception as e:
         logger.error(f"[generate_document] failed: {e}")

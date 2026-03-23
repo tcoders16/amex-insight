@@ -24,6 +24,10 @@ import time
 import logging
 import json
 from contextlib import asynccontextmanager
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path=Path(__file__).parent / ".env")
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
