@@ -332,7 +332,7 @@ export default function ArchitecturePage() {
                   </span>
                 </div>
                 <img
-                  src="/claude-desktop-mcp.png"
+                  src="/Claude-MCP.png"
                   alt="Claude Desktop with amex-insight MCP connected showing all 9 tools"
                   className="w-full object-cover"
                 />

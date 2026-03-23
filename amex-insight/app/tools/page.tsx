@@ -656,7 +656,7 @@ export default function ToolsPage() {
                 </span>
               </div>
               <img
-                src="/claude-desktop-mcp.png"
+                src="/Claude-MCP.png"
                 alt="Claude Desktop showing amex-insight MCP server with all 9 tools: search_financial_docs, get_document_page, compare_benchmarks, validate_faithfulness, extract_kpis, index_document_page, list_index, generate_document, send_email_summary"
                 className="w-full object-cover"
               />
