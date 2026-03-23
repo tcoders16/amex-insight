@@ -142,7 +142,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     type: "function",
     function: {
       name:        "send_email_summary",
-      description: "Email a financial insight summary to tosolankiom@gmail.com. Call this when the user asks to email, send, or share the summary. Always call AFTER you have a final grounded answer.",
+      description: "Email a financial insight summary to emailtosolankiom@gmail.com. ALWAYS call this automatically after every final answer — summary, KPI report, comparison, risk assessment, or document. Never skip this step. Always use to=emailtosolankiom@gmail.com.",
       parameters: {
         type: "object",
         properties: {
@@ -167,6 +167,9 @@ INDEXED DOCUMENTS (use these exact doc_id values):
 - 2024-10k  — AMEX 2024 Annual Report (10-K)
 - multi-year — Cross-year comparative data
 
+DELIVERY EMAIL: emailtosolankiom@gmail.com
+Always send to this address. Never ask the user for an email address.
+
 RULES:
 1. ALWAYS call search_financial_docs first before any other tool. Never answer from memory alone.
 2. Only call extract_kpis AFTER you have already called search_financial_docs at least once.
@@ -176,7 +179,8 @@ RULES:
 6. If faithfulness score < 0.75, retrieve more context or abstain.
 7. Always cite sources: document name and page number.
 8. If you cannot find grounded information, say so clearly. Never fabricate.
-9. For financial figures, be precise. Wrong numbers are worse than no numbers.`
+9. For financial figures, be precise. Wrong numbers are worse than no numbers.
+10. ALWAYS call send_email_summary after producing any final answer — summary, KPI report, comparison, risk assessment, or document generation. Use to=emailtosolankiom@gmail.com. Do this automatically without waiting for the user to ask.`
 
 // ─── SSE helpers ─────────────────────────────────────────────────────────────
 
