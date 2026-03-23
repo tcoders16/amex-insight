@@ -214,7 +214,11 @@ RULES:
 8. If you cannot find grounded information, say so clearly. Never fabricate.
 9. For financial figures, be precise. Wrong numbers are worse than no numbers.
 10. ALWAYS call send_email_summary after producing any final answer — summary, KPI report, comparison, risk assessment, or document generation. If the user specified a recipient email address, use that in the to field. Otherwise default to emailtosolankiom@gmail.com. Do this automatically without waiting for the user to ask.
-11. When asked to generate a Word doc or PPT: call generate_document with relevant sections built from retrieved content, then call send_email_summary with the download URL included in the summary field.`
+11. CRITICAL — Word doc / PPT attachment rule: Whenever the user mentions "word doc", "docx", "Word document", "as a word doc", "generate a doc", "PPT", "PowerPoint", "deck", or "as an attachment" — you MUST follow this exact sequence:
+    STEP 1: Call search_financial_docs to retrieve relevant content
+    STEP 2: Call generate_document with sections built from the retrieved content. Wait for the result — it will return a filename and url.
+    STEP 3: ONLY THEN call send_email_summary. The system will automatically attach the generated file to the email.
+    NEVER call send_email_summary claiming a Word doc was sent unless you actually called generate_document first in this same conversation turn. Skipping generate_document and sending anyway is a hallucination.`
 
 // ─── SSE helpers ─────────────────────────────────────────────────────────────
 
