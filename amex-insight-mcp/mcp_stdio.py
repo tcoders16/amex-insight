@@ -265,17 +265,17 @@ async def generate_document(
 async def send_email_summary(
     query:            str,
     summary:          str,
-    to:               str   = "tosolankiom@gmail.com",
+    to:               str   = "emailtosolankiom@gmail.com",
     confidence_score: float = 1.0,
 ) -> dict:
     """
-    Email a financial analysis summary via Resend API.
+    Email a financial analysis summary via Gmail SMTP.
     Sends a styled HTML email with confidence score and citations.
 
     Args:
         query:            The original financial question
         summary:          The AI-generated answer to send
-        to:               Recipient email (default: tosolankiom@gmail.com)
+        to:               Recipient email (default: emailtosolankiom@gmail.com)
         confidence_score: Faithfulness score 0–1 shown in email badge
     """
     from tools.email import send_email_summary as _fn

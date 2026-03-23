@@ -499,7 +499,7 @@ export default function ArchitecturePage() {
             </p>
             <div className="flex items-center justify-center gap-4 flex-wrap">
               <a
-                href="mailto:tosolankiom@gmail.com"
+                href="mailto:emailtosolankiom@gmail.com"
                 className="flex items-center gap-2 px-4 py-2 rounded-xl
                            bg-accent-blue text-white text-sm font-medium
                            hover:bg-blue-500 transition-colors shadow-glow-blue"
