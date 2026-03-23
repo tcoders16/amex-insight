@@ -50,6 +50,7 @@ export type ToolName =
   | "compare_benchmarks"
   | "validate_faithfulness"
   | "extract_kpis"
+  | "generate_document"
   | "save_chat"
   | "list_saved_chats"
   | "get_saved_chat"

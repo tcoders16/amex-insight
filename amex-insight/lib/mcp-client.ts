@@ -158,7 +158,7 @@ export async function sendEmailSummary(
   summary: string,
   confidenceScore: number,
   citations: { doc: string; page: number; score: number }[] = [],
-  to = "tosolankiom@gmail.com"
+  to = "emailtosolankiom@gmail.com"
 ): Promise<McpToolResult> {
   return callTool("send_email_summary", {
     to,
@@ -167,6 +167,15 @@ export async function sendEmailSummary(
     confidence_score: confidenceScore,
     citations: citations.map(c => ({ doc: c.doc, page: c.page, score: c.score })),
   })
+}
+
+export async function generateDocument(
+  docType: "word" | "ppt",
+  title: string,
+  sections: { heading: string; body: string }[],
+  subtitle = ""
+): Promise<McpToolResult> {
+  return callTool("generate_document", { doc_type: docType, title, sections, subtitle })
 }
 
 // ─── List available tools from MCP server ────────────────────────────────────

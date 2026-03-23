@@ -7,6 +7,7 @@ import {
   validateFaithfulness,
   extractKpis,
   sendEmailSummary,
+  generateDocument,
 } from "@/lib/mcp-client"
 import type { AgentStep, Citation, SessionMemory } from "@/lib/types"
 
@@ -141,6 +142,34 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
     type: "function",
     function: {
+      name:        "generate_document",
+      description: "Generate a Word (.docx) or PowerPoint (.pptx) document from financial analysis. Use when the user asks to 'generate a report', 'make a deck', 'create a Word doc', 'build a PPT', or 'export'. Returns a download URL. Always call send_email_summary after so the user receives the link by email.",
+      parameters: {
+        type: "object",
+        properties: {
+          doc_type:  { type: "string", enum: ["word", "ppt"], description: "word = .docx, ppt = .pptx" },
+          title:     { type: "string", description: "Document title" },
+          subtitle:  { type: "string", description: "Optional subtitle or date line" },
+          sections:  {
+            type: "array",
+            description: "Slides or sections — each with a heading and body text",
+            items: {
+              type: "object",
+              properties: {
+                heading: { type: "string" },
+                body:    { type: "string" },
+              },
+              required: ["heading", "body"],
+            },
+          },
+        },
+        required: ["doc_type", "title", "sections"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name:        "send_email_summary",
       description: "Email a financial insight summary to emailtosolankiom@gmail.com. ALWAYS call this automatically after every final answer — summary, KPI report, comparison, risk assessment, or document. Never skip this step. Always use to=emailtosolankiom@gmail.com.",
       parameters: {
@@ -180,7 +209,8 @@ RULES:
 7. Always cite sources: document name and page number.
 8. If you cannot find grounded information, say so clearly. Never fabricate.
 9. For financial figures, be precise. Wrong numbers are worse than no numbers.
-10. ALWAYS call send_email_summary after producing any final answer — summary, KPI report, comparison, risk assessment, or document generation. Use to=emailtosolankiom@gmail.com. Do this automatically without waiting for the user to ask.`
+10. ALWAYS call send_email_summary after producing any final answer — summary, KPI report, comparison, risk assessment, or document generation. Use to=emailtosolankiom@gmail.com. Do this automatically without waiting for the user to ask.
+11. When asked to generate a Word doc or PPT: call generate_document with relevant sections built from retrieved content, then call send_email_summary with the download URL included in the summary field.`
 
 // ─── SSE helpers ─────────────────────────────────────────────────────────────
 
@@ -327,6 +357,21 @@ export async function POST(req: Request) {
                 }
                 case "extract_kpis":
                   mcpResult = await extractKpis(args.doc_id)
+                  break
+                case "generate_document":
+                  mcpResult = await generateDocument(
+                    args.doc_type as "word" | "ppt",
+                    args.title as string,
+                    args.sections as { heading: string; body: string }[],
+                    args.subtitle as string | undefined,
+                  )
+                  addStep({
+                    id:     `doc-${Date.now()}`,
+                    type:   "tool_call",
+                    label:  `${args.doc_type === "ppt" ? "PowerPoint" : "Word doc"} generated → ${(mcpResult?.result as any)?.filename ?? ""}`,
+                    status: mcpResult?.result ? "done" : "error",
+                    durationMs: mcpResult?.durationMs,
+                  })
                   break
                 case "send_email_summary":
                   mcpResult = await sendEmailSummary(
