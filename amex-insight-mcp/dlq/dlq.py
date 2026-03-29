@@ -19,12 +19,12 @@ _redis = None
 def get_redis():
     global _redis
     if _redis is None:
-        url = os.environ.get("UPSTASH_REDIS_URL")
+        url = os.environ.get("UPSTASH_REDIS_REST_URL") or os.environ.get("UPSTASH_REDIS_URL")
         if url:
             from upstash_redis import Redis
             _redis = Redis.from_env()
         else:
-            logger.warning("[dlq] No UPSTASH_REDIS_URL — DLQ disabled (dev mode)")
+            logger.warning("[dlq] No UPSTASH_REDIS_REST_URL — DLQ disabled (dev mode)")
     return _redis
 
 
