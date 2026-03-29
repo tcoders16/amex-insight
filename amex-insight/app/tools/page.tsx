@@ -143,7 +143,7 @@ const MOCK_TOOLS: ToolDef[] = [
     ],
     callsToday:   612,
     avgLatencyMs: 94,
-    dlqCount:     2,
+    dlqCount:     0,
   },
   {
     name:        "extract_kpis",
