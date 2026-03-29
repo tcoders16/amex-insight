@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google"
+import { Inter, Space_Grotesk, JetBrains_Mono, Outfit } from "next/font/google"
 import "./globals.css"
 import { Navbar } from "@/components/ui/Navbar"
 
@@ -21,6 +21,13 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 })
 
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  display: "swap",
+  weight: ["400", "500", "600", "700", "800", "900"],
+})
+
 export const metadata: Metadata = {
   title: "AmexInsight — Agentic Financial Intelligence",
   description:
@@ -40,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
+      className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} ${outfit.variable}`}
     >
       <body className="bg-surface text-ink antialiased min-h-screen">
         <div className="scan-line" aria-hidden="true" />

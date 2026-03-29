@@ -36,6 +36,7 @@ from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic_settings import BaseSettings
 
+from observability.tracer import configure_langsmith
 from schemas.models import (
     SearchRequest, PageRequest, BenchmarkRequest,
     FaithfulnessRequest, KpiRequest, IndexRequest, HealthResponse,
@@ -87,7 +88,16 @@ async def lifespan(app: FastAPI):
     logger.info("[startup] Warming up index and reranker...")
     get_index()                        # loads SQLite + BM25
     from rag.retriever import get_reranker
-    get_reranker()                     # loads cross-encoder
+    get_reranker()                     # loads cross-encoder (~70MB, CPU inference)
+
+    # LangSmith — activate tracing for all LangChain/LangGraph calls
+    # Requires: LANGCHAIN_API_KEY + LANGCHAIN_TRACING_V2=true in .env
+    configure_langsmith()
+
+    # Warm up LangGraph dispute agent (compiles StateGraph + MemorySaver)
+    from agents.dispute_agent import get_dispute_graph
+    get_dispute_graph()
+
     logger.info("[startup] Ready")
     yield
     logger.info("[shutdown] Goodbye")
@@ -283,6 +293,64 @@ async def ingest_document(request: Request):
 
     get_index().add_chunks(chunks)
     return {"status": "indexed", "doc_id": body["doc_id"], "chunks": len(chunks)}
+
+
+# ─── LangGraph Dispute Agent endpoint ────────────────────────────────────────
+# Demonstrates the full 6-layer agentic architecture in one API call.
+# LangSmith traces every node → visible at smith.langchain.com
+
+from pydantic import BaseModel as _BaseModel
+
+class DisputeRequest(_BaseModel):
+    dispute_id:         str   = "DISP-2026-001"
+    card_member_id:     str   = "CM-12345"
+    transaction_id:     str   = "TX-98765"
+    transaction_amount: float = 850.00
+    merchant_name:      str   = "Unknown Merchant"
+    dispute_reason:     str   = "I did not make this purchase"
+
+
+@app.post("/agent/dispute")
+async def run_dispute_agent(request: Request):
+    """
+    Run the LangGraph Dispute Resolution Agent.
+
+    What happens inside (7 nodes):
+      1. classify_intent      — GPT-4o-mini classifies dispute type
+      2. retrieve_transaction — fetch transaction details (simulated gRPC)
+      3. retrieve_policy_docs — RAG: relevant Amex policy chunks
+      4. assess_risk          — GPT-4o fraud + risk scoring
+      5a. auto_resolve        — OR —
+      5b. escalate_human      — LangGraph PAUSES here if high-risk (HITL)
+      6.  notify_customer     — SMS + email notification
+
+    LangSmith traces every step → smith.langchain.com → project "amex-insight"
+
+    Example request:
+      POST /agent/dispute
+      {
+        "dispute_id": "DISP-2026-042",
+        "transaction_amount": 6500.00,   ← > $5000 → auto-escalates to human
+        "merchant_name": "Unknown POS",
+        "dispute_reason": "Card stolen, did not make this purchase"
+      }
+    """
+    await verify_hmac(request)
+
+    body = json.loads(await request.body())
+    req  = DisputeRequest(**body)
+
+    from agents.dispute_agent import run_dispute
+    result = await run_dispute(
+        dispute_id         = req.dispute_id,
+        card_member_id     = req.card_member_id,
+        transaction_id     = req.transaction_id,
+        transaction_amount = req.transaction_amount,
+        merchant_name      = req.merchant_name,
+        dispute_reason     = req.dispute_reason,
+    )
+
+    return JSONResponse(content=result)
 
 
 # ─── Dev server ──────────────────────────────────────────────────────────────

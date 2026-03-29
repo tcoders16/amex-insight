@@ -9,6 +9,7 @@ import {
   sendEmailSummary,
   generateDocument,
 } from "@/lib/mcp-client"
+import { getSessionContext, appendSessionFact } from "@/lib/session-context"
 import type { AgentStep, Citation, GeneratedDoc, SessionMemory } from "@/lib/types"
 
 // ─── Memory extractor ─────────────────────────────────────────────────────────
@@ -59,6 +60,7 @@ const RequestSchema = z.object({
     role:    z.enum(["user", "assistant"]),
     content: z.string(),
   })).min(1).max(20),
+  sessionId: z.string().max(64).optional(),
 })
 
 // ─── Tool definitions (OpenAI function-calling format) ───────────────────────
@@ -220,6 +222,33 @@ RULES:
     STEP 3: ONLY THEN call send_email_summary. The system will automatically attach the generated file to the email.
     NEVER call send_email_summary claiming a Word doc was sent unless you actually called generate_document first in this same conversation turn. Skipping generate_document and sending anyway is a hallucination.`
 
+// ─── Session fact extractor ───────────────────────────────────────────────────
+// Pulls flagged financial facts from agent response to persist in session MD.
+// Runs after final synthesis — no extra LLM call.
+
+function buildSessionBlock(userQuery: string, agentText: string): string {
+  const date = new Date().toISOString().split("T")[0]
+  const lines: string[] = [`## ${date}`, `**Q:** ${userQuery.slice(0, 160)}`]
+
+  // Extract sentences containing financial figures or key terms
+  const pattern = /[A-Z][^.!?]*(?:\$[\d.,]+\s*(?:billion|trillion|million)|[\d.]+\s*(?:percent|%)|(?:revenue|income|EPS|CAGR|growth|spending|net income|card member|acquisition)[^.!?]{0,80})[^.!?]*[.!?]/g
+  const matches = agentText.match(pattern) ?? []
+
+  for (const s of matches.slice(0, 4)) {
+    lines.push(`- ${s.trim()}`)
+  }
+
+  // If no numeric facts found, store first 2 sentences as context
+  if (lines.length === 2) {
+    const sentences = agentText.split(/(?<=[.!?])\s+/).slice(0, 2)
+    for (const s of sentences) {
+      if (s.trim().length > 20) lines.push(`- ${s.trim()}`)
+    }
+  }
+
+  return lines.join("\n")
+}
+
 // ─── SSE helpers ─────────────────────────────────────────────────────────────
 
 function sseEvent(data: object): string {
@@ -238,8 +267,11 @@ export async function POST(req: Request) {
   const parsed = RequestSchema.safeParse(body)
   if (!parsed.success) return new Response("Invalid request", { status: 400 })
 
-  const { messages } = parsed.data
+  const { messages, sessionId = "" } = parsed.data
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+
+  // Load session context MD from Redis (empty string if none / Redis not configured)
+  const sessionCtx = sessionId ? await getSessionContext(sessionId) : ""
 
   const encoder = new TextEncoder()
   const stream  = new TransformStream()
@@ -271,8 +303,14 @@ export async function POST(req: Request) {
     try {
       // Build message history for OpenAI
       type OAIMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam
+
+      // Inject session context MD as a second system block if present
+      const systemContent = sessionCtx.trim()
+        ? `${SYSTEM}\n\n---\n## Session Memory (facts flagged from this conversation)\nUse this as additional grounding context. Do not contradict it without new evidence.\n\n${sessionCtx.trim()}\n---`
+        : SYSTEM
+
       const apiMessages: OAIMessage[] = [
-        { role: "system", content: SYSTEM },
+        { role: "system", content: systemContent },
         ...messages.map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
       ]
 
@@ -503,8 +541,18 @@ export async function POST(req: Request) {
             finalFaithfulness !== undefined ? finalFaithfulness >= 0.75 : false
           )
 
+          // Persist flagged facts to session context MD (fire-and-forget)
+          if (sessionId && text.trim()) {
+            const userQuery = messages[messages.length - 1]?.content ?? ""
+            const block = buildSessionBlock(userQuery, text)
+            appendSessionFact(sessionId, block).catch(() => {})
+          }
+
+          const factCount = sessionCtx ? (sessionCtx.match(/^- /gm) ?? []).length : 0
+
           write({
             type:          "done",
+            factCount,
             citations:     dedup,
             generatedDocs: allGeneratedDocs,
             faithfulness:  finalFaithfulness,

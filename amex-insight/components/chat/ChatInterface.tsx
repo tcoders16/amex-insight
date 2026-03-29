@@ -230,6 +230,12 @@ function SessionMemoryPanel({ memories }: { memories: SessionMemory[] }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
+// Generate a stable UUID for this browser session
+function newSessionId(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID()
+  return `sess-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+}
+
 export default function ChatInterface() {
   const [messages, setMessages]   = useState<ChatMessage[]>([])
   const [input, setInput]         = useState("")
@@ -238,6 +244,15 @@ export default function ChatInterface() {
   const [memories, setMemories]   = useState<SessionMemory[]>([])
   const [sessions, setSessions]   = useState<ChatSession[]>([])
   const [activeSession, setActiveSession] = useState<string | null>(null)
+  const [sessionFactCount, setSessionFactCount] = useState(0)
+
+  // Stable session ID — persists for this browser tab's lifetime
+  const sessionIdRef = useRef<string>("")
+  useEffect(() => {
+    if (!sessionIdRef.current) {
+      sessionIdRef.current = newSessionId()
+    }
+  }, [])
   const [stats, setStats]         = useState<SessionStats>({
     toolCalls: 0, retried: 0, dlq: 0, recovered: 0, avgLatencyMs: 0,
   })
@@ -314,6 +329,14 @@ export default function ChatInterface() {
         return [session, ...prev].slice(0, 20)
       })
     }
+    // Delete session context from Redis and rotate sessionId
+    const oldSessionId = sessionIdRef.current
+    if (oldSessionId) {
+      fetch(`/api/session-context?sessionId=${encodeURIComponent(oldSessionId)}`, { method: "DELETE" }).catch(() => {})
+    }
+    sessionIdRef.current = newSessionId()
+    setSessionFactCount(0)
+
     setMessages([])
     setMcpLogs([])
     setMemories([])
@@ -386,7 +409,8 @@ export default function ChatInterface() {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({
-          messages: [...messages, userMsg].map(m => ({ role: m.role, content: m.content })),
+          messages:  [...messages, userMsg].map(m => ({ role: m.role, content: m.content })),
+          sessionId: sessionIdRef.current,
         }),
       })
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
@@ -439,7 +463,8 @@ export default function ChatInterface() {
                 setStats(prev => ({ ...prev, toolCalls: prev.toolCalls + 1 }))
             }
             if (event.type === "done") {
-              const { citations, generatedDocs, faithfulness, confidence, dlqEntries, retries, memories: newMems } = event
+              const { citations, generatedDocs, faithfulness, confidence, dlqEntries, retries, memories: newMems, factCount } = event
+              if (typeof factCount === "number") setSessionFactCount(factCount)
               if (newMems?.length) {
                 setMemories(prev => {
                   // Dedupe by fact text, keep max 30 across session
@@ -789,6 +814,16 @@ export default function ChatInterface() {
                 <span className="text-[10px] font-mono font-bold text-white bg-blue-500
                                  px-1.5 py-0.5 rounded-full tabular-nums">
                   {memories.length}
+                </span>
+              )}
+              {sessionFactCount > 0 && (
+                <span
+                  title={`${sessionFactCount} facts saved to session memory (persists across turns)`}
+                  className="flex items-center gap-1 text-[9px] font-mono font-bold text-violet-600
+                             bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full tabular-nums"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-400 inline-block" />
+                  {sessionFactCount} saved
                 </span>
               )}
             </div>

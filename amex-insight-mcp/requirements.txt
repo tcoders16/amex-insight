@@ -9,10 +9,17 @@ sentence-transformers>=3.0.0
 rank-bm25>=0.2.2
 transformers>=4.40.0
 
+# LangChain ecosystem — LangGraph agent + LangSmith tracing + text splitting
+langchain-core>=0.3.0
+langchain-openai>=0.2.0
+langgraph>=0.2.0
+langsmith>=0.1.0
+langchain-text-splitters>=0.3.0
+
 # Storage
 upstash-redis>=1.1.0
 
-# Observability
+# Observability (LangSmith is primary; langfuse kept as fallback)
 langfuse>=2.50.0
 
 # Utils

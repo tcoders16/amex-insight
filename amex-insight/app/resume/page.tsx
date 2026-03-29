@@ -125,13 +125,13 @@ export default function ResumePage() {
       {/* Resume card */}
       <div
         className="max-w-4xl mx-auto bg-white shadow-xl"
-        style={{ fontFamily: "'Times New Roman', Times, serif", padding: "56px 64px" }}
+        style={{ fontFamily: "var(--font-space-grotesk), -apple-system, BlinkMacSystemFont, sans-serif", padding: "56px 64px" }}
       >
         {/* Header */}
         <div className="text-center mb-1">
           <h1
             className="font-bold tracking-widest text-navy mb-1"
-            style={{ fontSize: "28px", letterSpacing: "0.15em" }}
+            style={{ fontSize: "28px", letterSpacing: "0.15em", fontFamily: "var(--font-outfit), sans-serif" }}
           >
             ARSHDEEP KAUR
           </h1>
