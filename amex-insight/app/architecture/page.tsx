@@ -615,6 +615,103 @@ export default function ArchitecturePage() {
           </div>
         </Section>
 
+        {/* ── Production Scale ──────────────────────────────────────── */}
+        <Section id="production-scale" label="Production Scale · How this MVP grows">
+          <p className="text-sm text-ink-muted mb-8 leading-relaxed max-w-2xl">
+            This MVP demonstrates the full stack end-to-end for a single user. Every component below
+            is a known production pattern — the MVP proves the core works, the right-hand column shows
+            exactly how each piece scales to enterprise.
+          </p>
+
+          {[
+            {
+              layer: "01",
+              name:  "Client Interface",
+              built: "Web Chat — React / Next.js · SSE streaming",
+              scale: "Mobile SDK (iOS/Android) · Phone IVR (Whisper STT + Polly TTS) · TLS 1.3 everywhere",
+              color: "blue",
+            },
+            {
+              layer: "02",
+              name:  "API Gateway & Security",
+              built: "HMAC-SHA256 signing · PII scrubbing · Redis rate limiter",
+              scale: "Kong / AWS ALB gateway · OAuth 2.0 + JWT · HashiCorp Vault (secrets) · Presidio (PII) · PCI-DSS tokenisation",
+              color: "purple",
+            },
+            {
+              layer: "03",
+              name:  "Agent Orchestration",
+              built: "GPT-4o ReAct loop · Redis session memory · LangGraph dispute agent",
+              scale: "Supervisor LangGraph agent · Fine-tuned DistilBERT intent classifier · Apache Kafka event bus · AES-256 session encryption",
+              color: "gold",
+            },
+            {
+              layer: "04",
+              name:  "Specialist Agents",
+              built: "Dispute agent (7-node LangGraph · HITL interrupt · MemorySaver)",
+              scale: "Account agent · Fraud agent (GPT-4 + ML ensemble) · Recommendation agent (RAG) · FAQ agent (semantic cache) — all K8s deployments with HPA",
+              color: "green",
+            },
+            {
+              layer: "05",
+              name:  "Tools & Integrations (MCP)",
+              built: "9 MCP tools · HTTP + stdio · FastAPI · Azure App Service",
+              scale: "Transaction API (gRPC) · Dispute Filing API (gRPC) · Notification service (SMS + email) · Human Review Queue (HITL case management)",
+              color: "indigo",
+            },
+            {
+              layer: "06",
+              name:  "Data & Persistence",
+              built: "SQLite FTS5 + BM25 · Upstash Redis · LangSmith traces",
+              scale: "PostgreSQL (customer data + LangGraph checkpoints) · pgvector HNSW (RAG embeddings) · Redis Cluster (cache + sessions) · S3 audit logs (7yr · SSE-KMS) · LangSmith evals",
+              color: "red",
+            },
+          ].map((row) => {
+            const c = COLOR_MAP[row.color as keyof typeof COLOR_MAP]
+            return (
+              <div key={row.layer}
+                className="flex gap-4 p-4 rounded-xl border border-border bg-surface-1 mb-3">
+                <div className={clsx(
+                  "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-[11px] font-mono font-bold",
+                  c.bg, c.border, "border", c.text
+                )}>
+                  {row.layer}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-heading font-semibold text-ink mb-2">{row.name}</div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="flex-1 p-2.5 rounded-lg bg-accent-green/5 border border-accent-green/15">
+                      <div className="text-[9px] font-mono text-accent-green uppercase tracking-widest mb-1">Built · MVP</div>
+                      <p className="text-[11px] font-mono text-ink-muted leading-relaxed">{row.built}</p>
+                    </div>
+                    <div className="flex-1 p-2.5 rounded-lg bg-accent-blue/5 border border-accent-blue/15">
+                      <div className="text-[9px] font-mono text-accent-blue uppercase tracking-widest mb-1">Prod Scale · Add this</div>
+                      <p className="text-[11px] font-mono text-ink-muted leading-relaxed">{row.scale}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+
+          <div className="mt-4 p-4 rounded-xl border border-border bg-surface-1">
+            <div className="text-[10px] font-mono text-ink-faint uppercase mb-2">Cross-cutting · Security & Observability</div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { name: "Istio Service Mesh", note: "mTLS everywhere · replace HMAC" },
+                { name: "AWS KMS", note: "Key management · replace shared secret" },
+                { name: "Prometheus + Grafana", note: "Infra monitoring · replace health endpoint" },
+                { name: "HashiCorp Vault", note: "Secrets · replace .env vars" },
+              ].map(t => (
+                <div key={t.name} className="p-2.5 rounded-lg border border-border bg-surface-2 flex-1 min-w-[180px]">
+                  <div className="text-[11px] font-mono font-semibold text-ink">{t.name}</div>
+                  <div className="text-[10px] font-mono text-ink-faint mt-0.5">{t.note}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Section>
+
         {/* ── Builder card ──────────────────────────────────────────── */}
         <section className="py-16">
           <div className="border-glow rounded-2xl p-8 text-center">
