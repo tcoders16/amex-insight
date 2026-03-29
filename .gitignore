@@ -22,8 +22,6 @@ build/
 *.log
 
 # ── Environment / Secrets ───────────────────────────────────────────
-.env
-.env.local
 .env.production.local
 .env.development.local
 .env.test.local
@@ -62,3 +60,4 @@ amex-insight-mcp/.venv/
 # bm25.pkl and index.db ARE committed (real AMEX 10-K index, ~8.4 MB)
 # Do NOT add amex-insight-mcp/data/ to .gitignore
 email-mcp/.env
+config.bat
